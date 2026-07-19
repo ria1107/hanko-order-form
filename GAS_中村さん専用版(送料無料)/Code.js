@@ -1,0 +1,207 @@
+/**
+ * 設定項目（送料無料・納期3日・書体記録 修正版）
+ * ここに秘密の値(URL・メールアドレス等)を直接書かないこと。
+ * 「スクリプトのプロパティ」(Apps Scriptエディタ → 歯車アイコン →
+ * 「プロジェクトの設定」→「スクリプト プロパティ」)に登録して読み込む。
+ *
+ * 必要なプロパティ一覧:
+ *   ADMIN_EMAIL       管理者(通知・BCC先)のメールアドレス
+ *   SLACK_WEBHOOK_URL  Slack通知用のIncoming Webhook URL
+ *   SLACK_MEMBER_ID    Slackでメンションする担当者のメンバーID
+ *   SPREADSHEET_ID     注文台帳スプレッドシートのID
+ *   PRINTER_EMAIL      フリーメイト発注先(印刷業者)のメールアドレス
+ */
+const SCRIPT_PROPS = PropertiesService.getScriptProperties();
+const ADMIN_EMAIL = SCRIPT_PROPS.getProperty('ADMIN_EMAIL');
+const NOTIFICATION_URL = SCRIPT_PROPS.getProperty('SLACK_WEBHOOK_URL');
+const SLACK_MEMBER_ID = SCRIPT_PROPS.getProperty('SLACK_MEMBER_ID');
+const SPREADSHEET_ID = SCRIPT_PROPS.getProperty('SPREADSHEET_ID');
+const PRINTER_EMAIL = SCRIPT_PROPS.getProperty('PRINTER_EMAIL');
+const SS_URL = 'https://docs.google.com/spreadsheets/d/' + SPREADSHEET_ID + '/edit';
+
+const PRICE_CORP_TSUGE_NORMAL = 8800;
+const PRICE_CORP_TSUGE_SPECIAL = 7700;
+const PRICE_CORP_KURO  = 22000;
+const FREIMATE_UNIT_PRICE = 1320;
+const SHIPPING_FEE = 0; // 送料無料
+const OPTION_DIGITAL_FEE = 2200;
+
+// 単品注文（1本から購入可）の価格表（税込）
+const SINGLE_ITEMS_CONFIG = [
+  { checkboxField: 'hasSingle15', materialField: 'single15Material', qtyField: 'single15Qty', textField: 'single15Text', label: '15ミリ丸棒',        prices: { '薩摩本柘': 3630,  '黒水牛': 4070 } },
+  { checkboxField: 'hasSingle18', materialField: 'single18Material', qtyField: 'single18Qty', textField: 'single18Text', label: '18ミリ天丸鞘付き', prices: { '薩摩本柘': 6270,  '黒水牛': 11330 } },
+  { checkboxField: 'hasSingle21', materialField: 'single21Material', qtyField: 'single21Qty', textField: 'single21Text', label: '21ミリ角天',        prices: { '薩摩本柘': 5000,  '黒水牛': 13000 } },
+];
+const PRICE_INK_BUNKA30 = 950; // 文化朱肉30号
+
+/**
+ * 全角数字を半角に変換
+ */
+function toHalfWidth(str) {
+  if (!str) return "";
+  return String(str).replace(/[０-９]/g, function(s) {
+    return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+  });
+}
+
+// フォームで選ばれた単品注文（15/18/21ミリ）を集計する
+function _buildSingleOrderItems(formData) {
+  var lines = [];
+  var subtotal = 0;
+  SINGLE_ITEMS_CONFIG.forEach(function(cfg) {
+    var checked = (formData[cfg.checkboxField] === 'true' || formData[cfg.checkboxField] === 'on');
+    if (!checked) return;
+    var material = formData[cfg.materialField] || '薩摩本柘';
+    var qty = parseInt(formData[cfg.qtyField]) || 1;
+    var unitPrice = cfg.prices[material];
+    var text = toHalfWidth((formData[cfg.textField] || "").trim());
+    subtotal += unitPrice * qty;
+    lines.push(cfg.label + "（" + material + "）× " + qty + "本" + (text ? "　印字内容：" + text : ""));
+  });
+  return { text: lines.join(" / "), subtotal: subtotal, lines: lines };
+}
+
+function doGet(e) {
+  var referrer = (e && e.parameter.ref) || "直販（紹介なし）";
+  var isSpecial = (e && e.parameter.p === 's') ? true : false;
+  var template = HtmlService.createTemplateFromFile('freimate_index');
+  template.referrer = referrer;
+  template.isSpecialParam = isSpecial ? 'true' : 'false';
+  return template.evaluate()
+    .setTitle('印鑑注文フォーム（送料無料）')
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+}
+
+function processOrderForm(formData) {
+  // デバッグ用ログ
+  console.log(JSON.stringify(formData));
+
+  try {
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var sheet = ss.getSheetByName('注文台帳_総合');
+    if (!sheet) {
+      sheet = ss.insertSheet('注文台帳_総合');
+      sheet.appendRow(["タイムスタンプ", "紹介者", "材質", "詳細", "フリーメイト枚数", "フリーメイト詳細", "単品注文詳細", "朱肉数量", "特急", "データ化", "合計金額", "氏名", "メール", "郵便番号", "住所", "TEL", "備考"]);
+    }
+
+    formData.tel = toHalfWidth(formData.tel);
+    formData.zipCode = toHalfWidth(formData.zipCode);
+    formData.address_manual = toHalfWidth(formData.address_manual);
+
+    var total = 0;
+    var isSpecial = (formData.isSpecial === 'true');
+    var hasCorp = (formData.hasCorporate === 'true' || formData.hasCorporate === 'on');
+    var hasFrei = (formData.hasFreimate === 'true' || formData.hasFreimate === 'on');
+    var isDigital = (hasCorp && (formData.isDigital === 'true' || formData.isDigital === 'on'));
+    var deliveryType = "3営業日以内に発送";
+
+    var corpMaterial = "-";
+    var innerTitle = "-";
+    var corpFont = "-";
+
+    if (hasCorp) {
+      corpMaterial = formData.corpMaterial || "薩摩本柘";
+      corpFont = formData.corpFont || "未選択";
+      innerTitle = (formData.corpText1_inner === "その他") ? formData.corpText1_inner_other : formData.corpText1_inner;
+      var tsugePrice = isSpecial ? PRICE_CORP_TSUGE_SPECIAL : PRICE_CORP_TSUGE_NORMAL;
+      total += (corpMaterial === '黒水牛') ? PRICE_CORP_KURO : tsugePrice;
+      if (isDigital) total += OPTION_DIGITAL_FEE;
+    }
+
+    var freiQty = 0;
+    var freiTexts = [];
+    if (hasFrei) {
+      freiQty = parseInt(formData.freiQuantity || 0);
+      total += freiQty * FREIMATE_UNIT_PRICE;
+      for (var i = 0; i < freiQty; i++) {
+        freiTexts.push(toHalfWidth(formData['frei_stamp_' + i]));
+      }
+    }
+
+    var singleResult = _buildSingleOrderItems(formData);
+    total += singleResult.subtotal;
+
+    var hasInk = (formData.hasInk === 'true' || formData.hasInk === 'on');
+    var inkQty = hasInk ? (parseInt(formData.inkQty) || 1) : 0;
+    total += inkQty * PRICE_INK_BUNKA30;
+
+    total += SHIPPING_FEE;
+
+    var fullAddress = (formData.address_auto || "") + (formData.address_manual || "");
+
+    var detailString = "材質:" + corpMaterial + " / 書体:" + corpFont + " / 社名:" + (formData.corpName || "-") + " / 役職:" + innerTitle;
+
+    sheet.appendRow([
+      new Date(), formData.referrer, corpMaterial, detailString,
+      hasFrei ? freiQty : "-", freiTexts.join(" / "),
+      singleResult.lines.length > 0 ? singleResult.text : "-",
+      inkQty > 0 ? inkQty : "-",
+      "-", isDigital ? "○" : "-", total,
+      formData.userName, formData.email, formData.zipCode, fullAddress, formData.tel, formData.remarks
+    ]);
+
+    sendOrderEmails(formData, total, hasCorp, corpMaterial, innerTitle, hasFrei, freiTexts, singleResult, inkQty, isDigital, deliveryType, fullAddress, corpFont);
+    return "ご注文を承りました。内容確認のメールをお送りしました。";
+
+  } catch (e) {
+    console.error(e.toString());
+    return "エラー発生: " + e.toString();
+  }
+}
+
+function sendOrderEmails(data, total, hasCorp, corpMaterial, innerTitle, hasFrei, freiTexts, singleResult, inkQty, isDigital, deliveryType, fullAddress, corpFont) {
+  var subject = "【注文受付】" + data.userName + "様（合計：" + total.toLocaleString() + "円）";
+  var body = data.userName + " 様\n\nご注文ありがとうございます。\n\n";
+  body += "【合計金額】" + total.toLocaleString() + "円(税込・送料無料)\n";
+  body += "【納期】" + deliveryType + "\n\n";
+
+  var orderDetails = "";
+  if (hasCorp) {
+    orderDetails += "■法人3本セット\n" +
+                    "役職：" + innerTitle + "\n" +
+                    "社名：" + data.corpName + "\n" +
+                    "材質：" + corpMaterial + "\n" +
+                    "書体：" + corpFont + "\n";
+    if (isDigital) orderDetails += "・角印電子データ化：希望する\n";
+    orderDetails += "\n";
+  }
+  if (hasFrei) {
+    orderDetails += "■フリーメイト内容（" + freiTexts.length + "枚）\n";
+    freiTexts.forEach(function(t, i) { orderDetails += (i+1) + "枚目：" + t + "\n"; });
+    orderDetails += "\n";
+  }
+  if (singleResult.lines.length > 0) {
+    orderDetails += "■単品注文\n";
+    singleResult.lines.forEach(function(l) { orderDetails += "・" + l + "\n"; });
+    orderDetails += "\n";
+  }
+  if (inkQty > 0) {
+    orderDetails += "■文化朱肉30号 × " + inkQty + "\n\n";
+  }
+
+  var mailFullBody = body + orderDetails + "【送り先】\n〒" + data.zipCode + "\n" + fullAddress + "\n" + data.userName + " 様\n電話番号：" + data.tel + "\n";
+  if (data.remarks) mailFullBody += "\n【備考】\n" + data.remarks + "\n";
+
+  GmailApp.sendEmail(data.email, subject, mailFullBody, { from: ADMIN_EMAIL, bcc: ADMIN_EMAIL });
+
+  // Slack通知（担当者への個人メンション付き）
+  var mention = "<@" + SLACK_MEMBER_ID + ">";
+  var slackText = mention + " *【印鑑注文（送料無料版）が入りました】*\n\n" +
+                  "*■基本情報*\n・注文者: " + data.userName + " 様\n・合計金額: " + total.toLocaleString() + "円 (税込)\n・納期: " + deliveryType + "\n\n" +
+                  "*■発注内容*\n" + orderDetails +
+                  "*■送り先情報*\n〒" + data.zipCode + "\n" + fullAddress + "\n" + data.userName + " 様\nTEL: " + data.tel + "\n";
+  if (data.remarks) slackText += "\n*■備考*\n" + data.remarks + "\n";
+  slackText += "\n詳細: <" + SS_URL + "|スプレッドシートを確認>";
+  UrlFetchApp.fetch(NOTIFICATION_URL, { method: "post", contentType: "application/json", payload: JSON.stringify({ text: slackText }) });
+
+  createPrinterDraftOnlyFreimate(data, hasFrei, freiTexts, deliveryType);
+}
+
+function createPrinterDraftOnlyFreimate(data, hasFrei, freiTexts, deliveryType) {
+  if (!hasFrei) return;
+  var qty = freiTexts.length;
+  var body = "西脇さま\n\nお世話になっております\nF3株式会社の杉角です\n\nフリーメイトの注文です\n\n62㎜でお願いします\n\n";
+  freiTexts.forEach(function(t, i) { body += (i + 1) + "行目：" + t + "\n\n"; });
+  body += "以上、" + qty + "枚です\n\n【納期】" + deliveryType + "\n\nお手数をおかけしますが\n校正の確認行いたいと思います\n\nよろしくお願いいたします";
+  GmailApp.createDraft(PRINTER_EMAIL, "発注依頼(" + data.userName + "様分)", body);
+}
