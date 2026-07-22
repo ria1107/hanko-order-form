@@ -57,6 +57,7 @@ function toHalfWidth(str) {
 // フォームで選ばれた単品注文（15/18/21ミリ）を集計する
 function _buildSingleOrderItems(formData) {
   var lines = [];
+  var items = [];
   var subtotal = 0;
   SINGLE_ITEMS_CONFIG.forEach(function(cfg) {
     var checked = (formData[cfg.checkboxField] === 'true' || formData[cfg.checkboxField] === 'on');
@@ -67,8 +68,9 @@ function _buildSingleOrderItems(formData) {
     var text = toHalfWidth((formData[cfg.textField] || "").trim());
     subtotal += unitPrice * qty;
     lines.push(cfg.label + "（" + material + "）× " + qty + "本" + (text ? "　印字内容：" + text : ""));
+    items.push({ name: cfg.label + "（" + material + "）", qty: qty, unitPrice: unitPrice });
   });
-  return { text: lines.join(" / "), subtotal: subtotal, lines: lines };
+  return { text: lines.join(" / "), subtotal: subtotal, lines: lines, items: items };
 }
 
 // GitHub Pagesでホストするフォームからのfetch(POST)を受け取る入口。
@@ -81,20 +83,25 @@ function doPost(e) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-// Squareの決済リンク(Payment Links API)を作成する。手数料は自社負担のため、
-// 現在の計算金額をそのまま課金する(上乗せしない)。JPYは補助単位を持たないため
-// price_money.amountはそのまま円の整数値でよい。
-function createSquarePaymentLink(total, customerName) {
+// Square注文明細(line_items)の1行を組み立てる。quantityは文字列で渡す仕様。
+function _sqLineItem(name, quantity, unitPrice) {
+  return { name: name, quantity: String(quantity), base_price_money: { amount: unitPrice, currency: 'JPY' } };
+}
+
+// Squareの決済リンク(Payment Links API)を、商品明細つきの注文(order)として作成する。
+// 手数料は自社負担のため、各明細の金額はそのまま課金する(上乗せしない)。
+// JPYは補助単位を持たないため、amountはそのまま円の整数値でよい。
+function createSquarePaymentLink(lineItems, customerName) {
   if (!SQUARE_ACCESS_TOKEN || !SQUARE_LOCATION_ID) {
     console.error('Square未設定: SQUARE_ACCESS_TOKENまたはSQUARE_LOCATION_IDが未設定です');
     return null;
   }
   var payload = {
     idempotency_key: Utilities.getUuid(),
-    quick_pay: {
-      name: '印鑑注文 - ' + customerName + '様',
-      price_money: { amount: total, currency: 'JPY' },
-      location_id: SQUARE_LOCATION_ID
+    order: {
+      location_id: SQUARE_LOCATION_ID,
+      reference_id: customerName,
+      line_items: lineItems
     }
   };
   var res = UrlFetchApp.fetch(SQUARE_API_BASE + '/v2/online-checkout/payment-links', {
@@ -126,6 +133,7 @@ function processOrderForm(formData) {
   formData.address_manual = toHalfWidth(formData.address_manual);
 
   var total = 0;
+  var lineItems = [];
   var isSpecial = (formData.isSpecial === 'true');
   var hasCorp = (formData.hasCorporate === 'true' || formData.hasCorporate === 'on');
   var hasFrei = (formData.hasFreimate === 'true' || formData.hasFreimate === 'on');
@@ -142,9 +150,11 @@ function processOrderForm(formData) {
     corpFont = formData.corpFont || "未選択"; // フォームから書体を取得
     innerTitle = (formData.corpText1_inner === "その他") ? formData.corpText1_inner_other : formData.corpText1_inner;
     var tsugePrice = isSpecial ? PRICE_CORP_TSUGE_SPECIAL : PRICE_CORP_TSUGE_NORMAL;
-    total += (corpMaterial === '黒水牛') ? PRICE_CORP_KURO : tsugePrice;
-    if (isExpress) total += OPTION_EXPRESS_FEE;
-    if (isDigital) total += OPTION_DIGITAL_FEE;
+    var corpPrice = (corpMaterial === '黒水牛') ? PRICE_CORP_KURO : tsugePrice;
+    total += corpPrice;
+    lineItems.push(_sqLineItem('法人3本セット（' + corpMaterial + '）', 1, corpPrice));
+    if (isExpress) { total += OPTION_EXPRESS_FEE; lineItems.push(_sqLineItem('特急発送オプション', 1, OPTION_EXPRESS_FEE)); }
+    if (isDigital) { total += OPTION_DIGITAL_FEE; lineItems.push(_sqLineItem('角印電子データ化オプション', 1, OPTION_DIGITAL_FEE)); }
   }
 
   var freiQty = 0;
@@ -152,17 +162,21 @@ function processOrderForm(formData) {
   if (hasFrei) {
     freiQty = parseInt(formData.freiQuantity);
     total += freiQty * FREIMATE_UNIT_PRICE;
+    lineItems.push(_sqLineItem('フリーメイト（組み合わせゴム印）', freiQty, FREIMATE_UNIT_PRICE));
     for (var i = 0; i < freiQty; i++) { freiTexts.push(toHalfWidth(formData['frei_stamp_' + i])); }
   }
 
   var singleResult = _buildSingleOrderItems(formData);
   total += singleResult.subtotal;
+  singleResult.items.forEach(function(it) { lineItems.push(_sqLineItem(it.name, it.qty, it.unitPrice)); });
 
   var hasInk = (formData.hasInk === 'true' || formData.hasInk === 'on');
   var inkQty = hasInk ? (parseInt(formData.inkQty) || 1) : 0;
   total += inkQty * PRICE_INK_BUNKA30;
+  if (inkQty > 0) lineItems.push(_sqLineItem('文化朱肉30号', inkQty, PRICE_INK_BUNKA30));
 
   total += SHIPPING_FEE;
+  lineItems.push(_sqLineItem('送料', 1, SHIPPING_FEE));
 
   var fullAddress = formData.address_auto + formData.address_manual;
 
@@ -177,7 +191,7 @@ function processOrderForm(formData) {
     formData.userName, formData.email, formData.zipCode, fullAddress, formData.tel, formData.remarks
   ]);
 
-  var paymentUrl = createSquarePaymentLink(total, formData.userName);
+  var paymentUrl = createSquarePaymentLink(lineItems, formData.userName);
 
   sendOrderEmails(formData, total, hasCorp, corpMaterial, innerTitle, hasFrei, freiTexts, singleResult, inkQty, isExpress, isDigital, deliveryType, fullAddress, corpFont, paymentUrl);
   return { message: "ご注文を承りました。内容確認のメールをお送りしました。", paymentUrl: paymentUrl };
