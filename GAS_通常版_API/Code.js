@@ -10,10 +10,14 @@
  *   SLACK_MEMBER_ID    Slackでメンションする担当者のメンバーID
  *   SPREADSHEET_ID     注文台帳スプレッドシートのID
  *   PRINTER_EMAIL      フリーメイト発注先(印刷業者)のメールアドレス
+ *   SQUARE_ACCESS_TOKEN  Square APIのアクセストークン(Sandbox/本番共通の項目名。値を入れ替えて切り替える)
+ *   SQUARE_LOCATION_ID   SquareのLocation ID
+ *   SQUARE_API_BASE      'https://connect.squareupsandbox.com'(テスト) または
+ *                         'https://connect.squareup.com'(本番)
  *
  * これはGAS_通常版(印鑑注文)と同じ注文台帳に書き込むAPI専用プロジェクト。
  * 画面(HTML)はGitHub Pagesで配信し、このプロジェクトはdoPostで
- * 注文データを受け取る役割のみを持つ。
+ * 注文データを受け取る役割のみを持つ。注文後、Square決済リンクを発行する。
  */
 const SCRIPT_PROPS = PropertiesService.getScriptProperties();
 const ADMIN_EMAIL = SCRIPT_PROPS.getProperty('ADMIN_EMAIL');
@@ -21,6 +25,9 @@ const NOTIFICATION_URL = SCRIPT_PROPS.getProperty('SLACK_WEBHOOK_URL');
 const SLACK_MEMBER_ID = SCRIPT_PROPS.getProperty('SLACK_MEMBER_ID');
 const SPREADSHEET_ID = SCRIPT_PROPS.getProperty('SPREADSHEET_ID');
 const PRINTER_EMAIL = SCRIPT_PROPS.getProperty('PRINTER_EMAIL');
+const SQUARE_ACCESS_TOKEN = SCRIPT_PROPS.getProperty('SQUARE_ACCESS_TOKEN');
+const SQUARE_LOCATION_ID = SCRIPT_PROPS.getProperty('SQUARE_LOCATION_ID');
+const SQUARE_API_BASE = SCRIPT_PROPS.getProperty('SQUARE_API_BASE') || 'https://connect.squareupsandbox.com';
 const SS_URL = 'https://docs.google.com/spreadsheets/d/' + SPREADSHEET_ID + '/edit';
 
 // 価格設定（税込）
@@ -68,10 +75,41 @@ function _buildSingleOrderItems(formData) {
 // プリフライト(OPTIONS)を発生させないよう、フォーム側はContent-Type: text/plainで送る想定。
 function doPost(e) {
   var formData = JSON.parse(e.postData.contents);
-  var resultMessage = processOrderForm(formData);
-  var success = resultMessage.indexOf('エラー発生') !== 0;
-  return ContentService.createTextOutput(JSON.stringify({ success: success, message: resultMessage }))
+  var result = processOrderForm(formData);
+  var success = result.message.indexOf('エラー発生') !== 0;
+  return ContentService.createTextOutput(JSON.stringify({ success: success, message: result.message, paymentUrl: result.paymentUrl }))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+// Squareの決済リンク(Payment Links API)を作成する。手数料は自社負担のため、
+// 現在の計算金額をそのまま課金する(上乗せしない)。JPYは補助単位を持たないため
+// price_money.amountはそのまま円の整数値でよい。
+function createSquarePaymentLink(total, customerName) {
+  if (!SQUARE_ACCESS_TOKEN || !SQUARE_LOCATION_ID) {
+    console.error('Square未設定: SQUARE_ACCESS_TOKENまたはSQUARE_LOCATION_IDが未設定です');
+    return null;
+  }
+  var payload = {
+    idempotency_key: Utilities.getUuid(),
+    quick_pay: {
+      name: '印鑑注文 - ' + customerName + '様',
+      price_money: { amount: total, currency: 'JPY' },
+      location_id: SQUARE_LOCATION_ID
+    }
+  };
+  var res = UrlFetchApp.fetch(SQUARE_API_BASE + '/v2/online-checkout/payment-links', {
+    method: 'post',
+    contentType: 'application/json',
+    headers: { 'Authorization': 'Bearer ' + SQUARE_ACCESS_TOKEN, 'Square-Version': '2025-01-23' },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
+  var body = JSON.parse(res.getContentText());
+  if (body.payment_link && body.payment_link.url) {
+    return body.payment_link.url;
+  }
+  console.error('Square決済リンク作成失敗: ' + res.getContentText());
+  return null;
 }
 
 function processOrderForm(formData) {
@@ -139,18 +177,23 @@ function processOrderForm(formData) {
     formData.userName, formData.email, formData.zipCode, fullAddress, formData.tel, formData.remarks
   ]);
 
-  sendOrderEmails(formData, total, hasCorp, corpMaterial, innerTitle, hasFrei, freiTexts, singleResult, inkQty, isExpress, isDigital, deliveryType, fullAddress, corpFont);
-  return "ご注文を承りました。内容確認のメールをお送りしました。";
+  var paymentUrl = createSquarePaymentLink(total, formData.userName);
+
+  sendOrderEmails(formData, total, hasCorp, corpMaterial, innerTitle, hasFrei, freiTexts, singleResult, inkQty, isExpress, isDigital, deliveryType, fullAddress, corpFont, paymentUrl);
+  return { message: "ご注文を承りました。内容確認のメールをお送りしました。", paymentUrl: paymentUrl };
 
   } catch (e) {
     console.error(e.toString());
-    return "エラー発生: " + e.toString();
+    return { message: "エラー発生: " + e.toString(), paymentUrl: null };
   }
 }
 
-function sendOrderEmails(data, total, hasCorp, corpMaterial, innerTitle, hasFrei, freiTexts, singleResult, inkQty, isExpress, isDigital, deliveryType, fullAddress, corpFont) {
+function sendOrderEmails(data, total, hasCorp, corpMaterial, innerTitle, hasFrei, freiTexts, singleResult, inkQty, isExpress, isDigital, deliveryType, fullAddress, corpFont, paymentUrl) {
   var subject = "【注文受付】" + data.userName + "様（合計：" + total.toLocaleString() + "円）";
   var body = data.userName + " 様\n\nご注文ありがとうございます。\n\n【合計金額】" + total.toLocaleString() + "円(税込・送料込)\n【納期】" + deliveryType + "\n\n";
+  body += paymentUrl
+    ? "【お支払い】\n下記のリンクからクレジットカードでお支払いください。\n" + paymentUrl + "\n\n"
+    : "【お支払い】\n決済リンクの発行に失敗しました。お手数ですが担当者からのご連絡をお待ちください。\n\n";
 
   var orderDetails = "";
   if (hasCorp) {
