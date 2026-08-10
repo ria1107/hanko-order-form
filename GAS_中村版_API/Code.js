@@ -43,6 +43,7 @@ const SINGLE_ITEMS_CONFIG = [
   { checkboxField: 'hasSingle15', materialField: 'single15Material', qtyField: 'single15Qty', textField: 'single15Text', label: '15ミリ丸棒',        prices: { '薩摩本柘': 3630,  '黒水牛': 4070 } },
   { checkboxField: 'hasSingle18', materialField: 'single18Material', qtyField: 'single18Qty', textField: 'single18Text', label: '18ミリ天丸鞘付き', prices: { '薩摩本柘': 6270,  '黒水牛': 11330 } },
   { checkboxField: 'hasSingle21', materialField: 'single21Material', qtyField: 'single21Qty', textField: 'single21Text', label: '21ミリ角天',        prices: { '薩摩本柘': 5000,  '黒水牛': 13000 } },
+  { checkboxField: 'hasSingleTi18', materialField: 'singleTi18Material', qtyField: 'singleTi18Qty', textField: 'singleTi18Text', label: '18ミリ丸棒（チタン）', prices: { 'チタン': 88000 } },
 ];
 const PRICE_INK_BUNKA30 = 950; // 文化朱肉30号
 
