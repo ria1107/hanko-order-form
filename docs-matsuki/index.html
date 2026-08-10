@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>印鑑注文フォーム（翌営業日発送）</title>
+  <style>
+    body { font-family: sans-serif; color: #333; max-width: 700px; margin: 0 auto; padding: 20px; background: #f4f7f6; }
+    h1 { text-align: center; color: #2c3e50; margin-bottom: 20px; font-size: 2.2em; border-bottom: 3px solid #3498db; display: inline-block; width: 100%; padding-bottom: 10px; }
+    .price-guide-upper { display: flex; gap: 15px; margin-bottom: 15px; justify-content: center; }
+    .price-guide-lower { display: flex; justify-content: center; margin-bottom: 25px; }
+    .price-card-item { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-align: center; padding-bottom: 12px; border: 2px solid #ddd; cursor: pointer; transition: 0.3s; width: 323px; }
+    .price-card-item.selected { border-color: #d32f2f; background-color: #fff9f9; box-shadow: 0 4px 12px rgba(211,47,47,0.2); }
+    .price-card-item img { width: 100%; height: 160px; object-fit: cover; border-bottom: 1px solid #eee; display: block; }
+    .card-checkbox-area { padding: 10px 0; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .card-checkbox-area input[type="checkbox"] { transform: scale(1.6); cursor: pointer; }
+    .price-card-item .name { font-weight: bold; font-size: 0.95em; color: #2c3e50; }
+    .price-card-item .price { color: #d32f2f; font-weight: bold; font-size: 1.1em; margin-top: 4px; }
+    .shipping-label { font-size: 0.8em; color: #d32f2f; font-weight: bold; margin-top: 4px; }
+    .section { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    h2 { color: #2c3e50; border-left: 5px solid #3498db; padding-left: 10px; margin-top: 0; font-size: 1.2em; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.9em; }
+    input[type="text"], input[type="email"], select, textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
+    input::placeholder, textarea::placeholder { color: #bbb !important; }
+    textarea { resize: vertical; min-height: 80px; }
+    .zip-container { display: flex; align-items: stretch; gap: 10px; }
+    .zip-input { width: 120px !important; }
+    .zip-btn { background: #3498db; color: white; border: none; padding: 0 15px; border-radius: 4px; cursor: pointer; font-size: 0.9em; font-weight: bold; transition: 0.2s; white-space: nowrap; }
+    .zip-btn:hover { background: #2980b9; }
+    .price-card-bottom { background: #2c3e50; color: white; padding: 20px; border-radius: 8px; text-align: center; margin-top: 20px; position: sticky; bottom: 10px; z-index: 100; box-shadow: 0 -2px 10px rgba(0,0,0,0.2); }
+    .price-val { font-size: 1.8em; font-weight: bold; display: block; color: #f1c40f; }
+    .hidden { display: none; }
+    .disabled-text { color: #bbb !important; }
+    .red-text { color: #d32f2f; }
+    .submit-btn { background: #27ae60; color: white; padding: 18px; border: none; border-radius: 5px; width: 100%; font-size: 1.2em; cursor: pointer; margin-top: 10px; font-weight: bold; }
+    .example-box { font-size: 0.85em; color: #777; background: #fdfdfd; padding: 12px; border-radius: 4px; border: 1px dashed #3498db; margin-bottom: 15px; line-height: 1.6; }
+    .font-image { width: 100%; max-width: 700px; height: auto; border-radius: 4px; border: 1px solid #ddd; display: block; margin: 10px auto; }
+    .readonly-bg { background-color: #f9f9f9; }
+    .single-item-row { display: flex; gap: 10px; align-items: center; margin: 8px 0 0 25px; flex-wrap: wrap; }
+    .single-item-row select { width: auto; flex: 1; }
+    .single-item-row input[type="number"] { width: 70px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
+    .card-group-label { text-align: center; font-weight: bold; color: #2c3e50; font-size: 0.95em; margin-bottom: 8px; }
+    .required-badge { background: #d32f2f; color: #fff; font-size: 0.7em; padding: 2px 6px; border-radius: 3px; margin-left: 4px; font-weight: normal; vertical-align: middle; }
+    .option-hint { font-size: 0.75em; color: #999; margin-left: 25px; margin-top: 2px; }
+    .payment-note { text-align: center; font-size: 0.8em; color: #bdc3c7; margin-top: 10px; }
+    .breakdown-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #eee; font-size: 0.9em; }
+    .breakdown-row:last-child { border-bottom: none; }
+    .breakdown-empty { color: #999; font-size: 0.9em; text-align: center; padding: 6px 0; }
+    .size-group-label { display: block; font-weight: bold; margin-bottom: 6px; font-size: 0.9em; }
+    .single-mini-row { display: flex; gap: 10px; }
+    .single-mini-card { flex: 1; display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; border-radius: 8px; padding: 8px; cursor: pointer; transition: 0.2s; background: #fff; min-width: 0; }
+    .single-mini-card.selected { border-color: #d32f2f; background: #fff9f9; box-shadow: 0 2px 8px rgba(211,47,47,0.15); }
+    .single-mini-card input[type="checkbox"] { transform: scale(1.3); cursor: pointer; flex-shrink: 0; }
+    .single-mini-card img { width: 64px; height: 64px; object-fit: contain; background: #f4f7f6; border-radius: 4px; flex-shrink: 0; }
+    .single-mini-card .mini-info { min-width: 0; }
+    .single-mini-card .mini-name { font-weight: bold; font-size: 0.85em; color: #2c3e50; }
+    .single-mini-card .mini-price { color: #d32f2f; font-weight: bold; font-size: 0.9em; margin-top: 2px; }
+    @media (max-width: 680px) { .price-guide-upper { flex-direction: column; align-items: center; } .price-guide-lower { flex-direction: column; align-items: center; } .price-card-item { width: 100%; max-width: 323px; margin-bottom: 10px; } .zip-container { flex-direction: column; } .zip-input { width: 100% !important; } .zip-btn { padding: 12px; } .price-card-bottom { position: static; margin-top: 20px; } }
+  </style>
+</head>
+<body>
+
+  <h1>印鑑注文フォーム</h1>
+
+  <div class="card-group-label">法人3本セット</div>
+  <div class="price-guide-upper">
+    <div class="price-card-item" id="card-tsuge" onclick="selectMaterialFromCard('薩摩本柘')">
+      <img src="https://drive.google.com/thumbnail?id=13zFX2vV3De3_YwTUWXrxu14tupYXaJnR&sz=w646">
+      <div class="card-checkbox-area"><input type="checkbox" id="check-tsuge"> <span class="name">薩摩本柘 3本セット</span></div>
+      <div class="price">11,000円(税込)</div>
+      <div class="shipping-label">14時までのご注文で翌営業日発送</div>
+    </div>
+
+    <div class="price-card-item" id="card-kuro" onclick="selectMaterialFromCard('黒水牛')">
+      <img src="https://drive.google.com/thumbnail?id=1NczEmXeR_rhuNBs4m9YWJunz_IIGmpo4&sz=w646">
+      <div class="card-checkbox-area"><input type="checkbox" id="check-kuro"> <span class="name">黒水牛 3本セット</span></div>
+      <div class="price">24,200円(税込)</div>
+      <div class="shipping-label">14時までのご注文で翌営業日発送</div>
+    </div>
+  </div>
+
+  <div class="card-group-label">ゴム印</div>
+  <div class="price-guide-lower">
+    <div class="price-card-item" id="card-frei" onclick="selectFreimateFromCard()">
+      <img src="https://drive.google.com/thumbnail?id=1fBz-aI7eWxfDMSwgSH8O42UwRti9-Tam&sz=w646">
+      <div class="card-checkbox-area"><input type="checkbox" id="check-frei"> <span class="name">フリーメイト (組み合わせゴム印)</span></div>
+      <div class="price">1枚 1,320円(税込)</div>
+      <div class="shipping-label">14時までのご注文で翌営業日発送</div>
+    </div>
+  </div>
+
+<form id="orderForm">
+  <input type="hidden" name="referrer" id="referrerInput" value="直販（紹介なし）">
+  <input type="checkbox" name="hasCorporate" id="hasCorporate" class="hidden">
+  <input type="checkbox" name="hasFreimate" id="hasFreimate" class="hidden">
+
+  <div id="corpFields" class="section" style="display:none;">
+    <h2>法人3本セット 入力事項</h2>
+    <div class="form-group"><label>材質を選択</label>
+      <select name="corpMaterial" id="corpMaterial" onchange="syncCards();">
+        <option value="薩摩本柘">薩摩本柘 (11,000円(税込))</option>
+        <option value="黒水牛">黒水牛 (24,200円(税込))</option>
+      </select>
+    </div>
+    <div class="form-group"><label>書体</label><img src="https://drive.google.com/thumbnail?id=1cZHV6OC6qciCKkYR92SSn1RRxM-Dw_M6&sz=w1400" class="font-image"><select name="corpFont"><option>篆書体（推奨）</option><option>印相体</option><option>古印体</option></select></div>
+    <div class="form-group"><label>社名 (丸印・角印共通)</label><input type="text" name="corpName" placeholder="例：株式会社〇〇"></div>
+    <div class="form-group"><label>丸印の役職名</label><select name="corpText1_inner" id="corpText1_inner" onchange="toggleOtherTitle()"><option value="代表取締役印">代表取締役印</option><option value="取締役印">取締役印</option><option value="代表者印">代表者印</option><option value="理事長印">理事長印</option><option value="その他">その他（自由入力）</option></select><div id="otherTitleArea" style="display:none; margin-top:10px; padding:10px; background:#f9f9f9; border-left:3px solid #3498db;"><input type="text" name="corpText1_inner_other" id="corpText1_inner_other" placeholder="役職名を入力"></div></div>
+  </div>
+
+  <div id="freiFields" class="section" style="display:none;">
+    <h2>フリーメイト 内容</h2>
+    <div class="example-box"><strong>【記入例】</strong><br>1枚目：〒116-0002 東京都荒川区荒川1-2-3<br>2枚目：株式会社〇〇〇〇<br>3枚目：代表取締役 〇〇 〇〇<br>4枚目：TEL 03-1234-5678<br>5枚目：登録番号 T1234567890123<p style="color:#d32f2f; font-weight:bold; margin-top:10px;">※住所などは文字数等により、1枚の中で2段に調整させていただく場合がございます。</p></div>
+    <div class="form-group"><label>枚数</label><select name="freiQuantity" id="freiQuantity" onchange="generateFreiInputs(); updatePrice();">
+      <option value="1">1枚</option>
+      <option value="2">2枚</option>
+      <option value="3">3枚</option>
+      <option value="4">4枚</option>
+      <option value="5" selected>5枚</option>
+      <option value="6">6枚</option>
+      <option value="7">7枚</option>
+      <option value="8">8枚</option>
+      <option value="9">9枚</option>
+      <option value="10">10枚</option>
+    </select></div>
+    <div id="freiStampArea"></div>
+  </div>
+
+  <div class="section">
+    <h2>単品注文 <span class="red-text">(1本から購入できます)</span></h2>
+
+    <div class="form-group">
+      <label class="size-group-label">15ミリ丸棒</label>
+      <div class="single-mini-row">
+        <label class="single-mini-card" id="miniCard-single15-薩摩本柘">
+          <input type="checkbox" id="miniChk-single15-薩摩本柘" onchange="selectSingleSizeMat('single15','薩摩本柘')">
+          <img src="https://drive.google.com/thumbnail?id=18kAXuT9sS5wjkNhr-Vwvbe8-Dh7xqsxQ&sz=w300">
+          <div class="mini-info"><div class="mini-name">薩摩本柘</div><div class="mini-price">3,630円</div></div>
+        </label>
+        <label class="single-mini-card" id="miniCard-single15-黒水牛">
+          <input type="checkbox" id="miniChk-single15-黒水牛" onchange="selectSingleSizeMat('single15','黒水牛')">
+          <img src="https://drive.google.com/thumbnail?id=1WUSQPrBt1ShW0EXcrKcgb7EZ4t26-VjW&sz=w300">
+          <div class="mini-info"><div class="mini-name">黒水牛</div><div class="mini-price">4,070円</div></div>
+        </label>
+      </div>
+      <input type="checkbox" name="hasSingle15" id="hasSingle15" style="display:none;">
+      <div id="single15Row" class="single-item-row" style="display:none;">
+        <input type="hidden" name="single15Material" id="single15Material" value="薩摩本柘">
+        <input type="number" name="single15Qty" id="single15Qty" value="1" min="1" onchange="updatePrice()"> 本
+        <div class="form-group" style="width:100%; margin-top:8px;"><label>印字内容（彫刻するお名前）</label><textarea name="single15Text" placeholder="例：山田太郎　※複数本ご注文の場合は1行ずつご記入ください"></textarea></div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="size-group-label">18ミリ天丸鞘付き</label>
+      <div class="single-mini-row">
+        <label class="single-mini-card" id="miniCard-single18-薩摩本柘">
+          <input type="checkbox" id="miniChk-single18-薩摩本柘" onchange="selectSingleSizeMat('single18','薩摩本柘')">
+          <img src="https://drive.google.com/thumbnail?id=1jLuP3W4Y6vNmGKX1RgZgH-3vobMn2l2a&sz=w300">
+          <div class="mini-info"><div class="mini-name">薩摩本柘</div><div class="mini-price">6,270円</div></div>
+        </label>
+        <label class="single-mini-card" id="miniCard-single18-黒水牛">
+          <input type="checkbox" id="miniChk-single18-黒水牛" onchange="selectSingleSizeMat('single18','黒水牛')">
+          <img src="https://drive.google.com/thumbnail?id=1H8hFngdPevGh8g-js3IwfyekMmfifTqU&sz=w300">
+          <div class="mini-info"><div class="mini-name">黒水牛</div><div class="mini-price">11,330円</div></div>
+        </label>
+      </div>
+      <input type="checkbox" name="hasSingle18" id="hasSingle18" style="display:none;">
+      <div id="single18Row" class="single-item-row" style="display:none;">
+        <input type="hidden" name="single18Material" id="single18Material" value="薩摩本柘">
+        <input type="number" name="single18Qty" id="single18Qty" value="1" min="1" onchange="updatePrice()"> 本
+        <div class="form-group" style="width:100%; margin-top:8px;"><label>印字内容（彫刻するお名前）</label><textarea name="single18Text" placeholder="例：山田太郎　※複数本ご注文の場合は1行ずつご記入ください"></textarea></div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="size-group-label">21ミリ角天</label>
+      <div class="single-mini-row">
+        <label class="single-mini-card" id="miniCard-single21-薩摩本柘">
+          <input type="checkbox" id="miniChk-single21-薩摩本柘" onchange="selectSingleSizeMat('single21','薩摩本柘')">
+          <img src="https://drive.google.com/thumbnail?id=1CSir5UDbe1ptisNJWp-qtIYua7BV6cyh&sz=w300">
+          <div class="mini-info"><div class="mini-name">薩摩本柘</div><div class="mini-price">5,000円</div></div>
+        </label>
+        <label class="single-mini-card" id="miniCard-single21-黒水牛">
+          <input type="checkbox" id="miniChk-single21-黒水牛" onchange="selectSingleSizeMat('single21','黒水牛')">
+          <img src="https://drive.google.com/thumbnail?id=1iSAKITJP_aHcxgXDud-3iVHP35RnmchR&sz=w300">
+          <div class="mini-info"><div class="mini-name">黒水牛</div><div class="mini-price">13,000円</div></div>
+        </label>
+      </div>
+      <input type="checkbox" name="hasSingle21" id="hasSingle21" style="display:none;">
+      <div id="single21Row" class="single-item-row" style="display:none;">
+        <input type="hidden" name="single21Material" id="single21Material" value="薩摩本柘">
+        <input type="number" name="single21Qty" id="single21Qty" value="1" min="1" onchange="updatePrice()"> 本
+        <div class="form-group" style="width:100%; margin-top:8px;"><label>印字内容（彫刻するお名前）</label><textarea name="single21Text" placeholder="例：山田太郎　※複数本ご注文の場合は1行ずつご記入ください"></textarea></div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="size-group-label">18ミリ丸棒（チタン）</label>
+      <div class="single-mini-row">
+        <label class="single-mini-card" id="miniCard-singleTi18-チタン">
+          <input type="checkbox" id="miniChk-singleTi18-チタン" onchange="selectSingleOnlyMat('singleTi18','チタン')">
+          <img src="https://drive.google.com/thumbnail?id=1wQLOCGE7yje-fwSMN-t9N_9ebwun3sKA&sz=w300">
+          <div class="mini-info"><div class="mini-name">チタン</div><div class="mini-price">88,000円</div></div>
+        </label>
+      </div>
+      <input type="checkbox" name="hasSingleTi18" id="hasSingleTi18" style="display:none;">
+      <div id="singleTi18Row" class="single-item-row" style="display:none;">
+        <input type="hidden" name="singleTi18Material" id="singleTi18Material" value="チタン">
+        <input type="number" name="singleTi18Qty" id="singleTi18Qty" value="1" min="1" onchange="updatePrice()"> 本
+        <div class="form-group" style="width:100%; margin-top:8px;"><label>印字内容（彫刻するお名前）</label><textarea name="singleTi18Text" placeholder="例：山田太郎　※複数本ご注文の場合は1行ずつご記入ください"></textarea></div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label><input type="checkbox" name="hasInk" id="hasInk" onchange="toggleSingleRow('hasInk','inkRow')"> <img src="https://drive.google.com/thumbnail?id=1sr555hMOmg29iTJDHih--trHiR_20bBk&sz=w100" style="width:40px;height:40px;object-fit:cover;border-radius:4px;vertical-align:middle;margin:0 6px;"> 文化朱肉30号（950円）</label>
+      <div id="inkRow" class="single-item-row" style="display:none;">
+        <input type="number" name="inkQty" id="inkQty" value="1" min="1" onchange="updatePrice()"> 個
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>オプション <span class="red-text">(3本セット注文時のみ)</span></h2>
+    <div class="form-group"><label id="digitalLabel" style="color:#bbb; cursor:default;"><input type="checkbox" name="isDigital" id="isDigital" disabled onchange="updatePrice()"> <strong>角印電子データ化：2,200円(税込)</strong></label><div class="option-hint" id="digitalHint">※3本セットを選択すると利用できます</div></div>
+  </div>
+
+  <div class="section">
+    <h2>送り先</h2>
+    <div class="form-group"><label>お名前 <span class="required-badge">必須</span></label><input type="text" name="userName" placeholder="例：田中 太郎" required></div>
+    <div class="form-group"><label>メールアドレス <span class="required-badge">必須</span></label><input type="email" name="email" placeholder="example@mail.com" required></div>
+    <div class="form-group"><label>郵便番号</label><div class="zip-container"><input type="text" name="zipCode" id="zipCode" class="zip-input" placeholder="1234567" maxlength="8"><button type="button" class="zip-btn" onclick="handleZipClick()">住所を入力</button></div></div>
+    <div class="form-group"><label>都道府県・市区町村 <span class="required-badge">必須</span></label><input type="text" name="address_auto" id="address_auto" class="readonly-bg" placeholder="東京都荒川区..." required></div>
+    <div class="form-group"><label>番地・建物名・部屋番号 <span class="required-badge">必須</span></label><input type="text" name="address_manual" id="address_manual" placeholder="例：2-27-12 〇〇ビル101" required></div>
+    <div class="form-group"><label>電話番号 <span class="required-badge">必須</span></label><input type="text" name="tel" placeholder="090-0000-0000" required></div>
+    <div class="form-group"><label>備考</label><textarea name="remarks" placeholder="ご要望などございましたらご記入ください"></textarea></div>
+  </div>
+
+  <div class="section" id="breakdownSection">
+    <h2>ご注文内容</h2>
+    <div id="breakdownList"><div class="breakdown-empty">商品を選択すると内訳が表示されます</div></div>
+  </div>
+
+  <div class="price-card-bottom"><span id="deliveryLabel">納期：14時までのご注文で翌営業日発送</span><span class="price-val" id="totalDisplay">770円(税込)</span><button type="button" id="submitBtn" class="submit-btn" onclick="submitForm()">注文を確定する</button><div class="payment-note">💳 お支払いはクレジットカード（Square決済）でお願いいたします</div></div>
+</form>
+
+<div style="text-align:center; margin-top:20px; font-size:0.8em; color:#999;">
+  <a href="tokushoho.html" style="color:#3498db;">特定商取引法に基づく表記</a> ／ F3株式会社
+</div>
+
+<script>
+  // このフォームはNetlify等で配信し、送信先はGoogle Apps Script(API専用プロジェクト)。
+  // GAS_松木版_API のデプロイURLに置き換えること。
+  var API_URL = 'https://script.google.com/macros/s/【GAS_松木版_APIのデプロイURLに置き換え】/exec';
+
+  // 計算用定数（松木様専用：3本セット価格に特急発送分2,200円を含む。送料は通常版と同じ770円）
+  var TSUGE_PRICE = 11000;
+  var KURO_PRICE = 24200;
+  var FREI_PRICE = 1320;
+  var SHIP_FEE = 770;
+  var OPTION_FEE = 2200;
+  var SINGLE_PRICES = {
+    single15: { '薩摩本柘': 3630,  '黒水牛': 4070 },
+    single18: { '薩摩本柘': 6270,  '黒水牛': 11330 },
+    single21: { '薩摩本柘': 5000,  '黒水牛': 13000 },
+    singleTi18: { 'チタン': 88000 }
+  };
+  var INK_PRICE = 950;
+
+  function toggleSingleRow(checkboxId, rowId) {
+    var checked = document.getElementById(checkboxId).checked;
+    document.getElementById(rowId).style.display = checked ? 'flex' : 'none';
+    updatePrice();
+  }
+
+  function selectSingleSizeMat(key, mat) {
+    var otherMat = (mat === '薩摩本柘') ? '黒水牛' : '薩摩本柘';
+    var thisChk = document.getElementById('miniChk-' + key + '-' + mat);
+    var otherChk = document.getElementById('miniChk-' + key + '-' + otherMat);
+    var mainChk = document.getElementById('has' + key.charAt(0).toUpperCase() + key.slice(1));
+
+    if (thisChk.checked) {
+      otherChk.checked = false;
+      mainChk.checked = true;
+      document.getElementById(key + 'Material').value = mat;
+      document.getElementById(key + 'Row').style.display = 'flex';
+    } else {
+      mainChk.checked = false;
+      document.getElementById(key + 'Row').style.display = 'none';
+    }
+
+    document.getElementById('miniCard-' + key + '-薩摩本柘').className = document.getElementById('miniChk-' + key + '-薩摩本柘').checked ? 'single-mini-card selected' : 'single-mini-card';
+    document.getElementById('miniCard-' + key + '-黒水牛').className = document.getElementById('miniChk-' + key + '-黒水牛').checked ? 'single-mini-card selected' : 'single-mini-card';
+
+    updatePrice();
+  }
+
+  function selectSingleOnlyMat(key, mat) {
+    var chk = document.getElementById('miniChk-' + key + '-' + mat);
+    var mainChk = document.getElementById('has' + key.charAt(0).toUpperCase() + key.slice(1));
+
+    if (chk.checked) {
+      mainChk.checked = true;
+      document.getElementById(key + 'Row').style.display = 'flex';
+    } else {
+      mainChk.checked = false;
+      document.getElementById(key + 'Row').style.display = 'none';
+    }
+
+    document.getElementById('miniCard-' + key + '-' + mat).className = chk.checked ? 'single-mini-card selected' : 'single-mini-card';
+
+    updatePrice();
+  }
+
+  function calcSingleItemsTotal() {
+    var total = 0;
+    ['single15', 'single18', 'single21', 'singleTi18'].forEach(function(key) {
+      var checkbox = document.getElementById('has' + key.charAt(0).toUpperCase() + key.slice(1));
+      if (!checkbox.checked) return;
+      var material = document.getElementById(key + 'Material').value;
+      var qty = parseInt(document.getElementById(key + 'Qty').value) || 1;
+      total += SINGLE_PRICES[key][material] * qty;
+    });
+    if (document.getElementById('hasInk').checked) {
+      var inkQty = parseInt(document.getElementById('inkQty').value) || 1;
+      total += INK_PRICE * inkQty;
+    }
+    return total;
+  }
+
+  function handleZipClick() {
+    var zip = document.getElementById('zipCode').value.replace(/\D/g, '');
+    if (zip.length !== 7) { alert("郵便番号を7桁で入力してください。"); return; }
+    fetch('https://zipcloud.ibsnet.co.jp/api/search?zipcode=' + zip).then(function(res){return res.json();}).then(function(data){
+      if(data.results && data.results[0]){ document.getElementById('address_auto').value = data.results[0].address1 + data.results[0].address2 + data.results[0].address3; document.getElementById('address_manual').focus(); }
+      else { alert("該当する住所が見つかりませんでした。"); }
+    }).catch(function(err){ alert("通信エラーです。"); });
+  }
+
+  function selectMaterialFromCard(mat) {
+    var mainCheck = document.getElementById('hasCorporate');
+    var materialSelect = document.getElementById('corpMaterial');
+    if (mainCheck.checked && materialSelect.value === mat) { mainCheck.checked = false; }
+    else { mainCheck.checked = true; materialSelect.value = mat; }
+    syncCards();
+  }
+
+  function selectFreimateFromCard() {
+    var freiCheck = document.getElementById('hasFreimate');
+    freiCheck.checked = !freiCheck.checked;
+    syncCards();
+  }
+
+  function syncCards() {
+    var isCorp = document.getElementById('hasCorporate').checked;
+    var isFrei = document.getElementById('hasFreimate').checked;
+    var mat = document.getElementById('corpMaterial').value;
+    document.getElementById('card-tsuge').className = (isCorp && mat === '薩摩本柘') ? 'price-card-item selected' : 'price-card-item';
+    document.getElementById('card-kuro').className = (isCorp && mat === '黒水牛') ? 'price-card-item selected' : 'price-card-item';
+    document.getElementById('card-frei').className = isFrei ? 'price-card-item selected' : 'price-card-item';
+    document.getElementById('check-tsuge').checked = (isCorp && mat === '薩摩本柘');
+    document.getElementById('check-kuro').checked = (isCorp && mat === '黒水牛');
+    document.getElementById('check-frei').checked = isFrei;
+    document.getElementById('corpFields').style.display = isCorp ? 'block' : 'none';
+    document.getElementById('freiFields').style.display = isFrei ? 'block' : 'none';
+    var di = document.getElementById('isDigital');
+    di.disabled = !isCorp;
+    if (!isCorp) { di.checked = false; }
+    document.getElementById('digitalLabel').style.color = isCorp ? '#333' : '#bbb';
+    document.getElementById('digitalHint').style.display = isCorp ? 'none' : 'block';
+    if (isFrei) generateFreiInputs();
+    updatePrice();
+  }
+
+  function toggleOtherTitle() {
+    var select = document.getElementById('corpText1_inner');
+    document.getElementById('otherTitleArea').style.display = (select.value === 'その他') ? 'block' : 'none';
+  }
+
+  function generateFreiInputs() {
+    var qty = parseInt(document.getElementById('freiQuantity').value);
+    var area = document.getElementById('freiStampArea');
+    var currentRows = area.getElementsByClassName('frei-stamp-row');
+    var ex = ["〒116-0002 荒川区...", "株式会社〇〇", "代表取締役 〇〇", "TEL 03-xxxx", "T123456..."];
+    if (qty > currentRows.length) {
+      for (var i = currentRows.length; i < qty; i++) {
+        var div = document.createElement('div');
+        div.className = 'frei-stamp-row'; div.style.marginBottom = '8px';
+        div.innerHTML = (i + 1) + '枚目: <input type="text" name="frei_stamp_' + i + '" placeholder="（記入例：' + (ex[i] || '') + '）" required>';
+        area.appendChild(div);
+      }
+    } else { while (area.children.length > qty) { area.removeChild(area.lastChild); } }
+  }
+
+  function updatePrice() {
+    var total = SHIP_FEE;
+    var isCorp = document.getElementById('hasCorporate').checked;
+    var isFrei = document.getElementById('hasFreimate').checked;
+
+    if (isCorp) {
+      total += (document.getElementById('corpMaterial').value === '黒水牛') ? KURO_PRICE : TSUGE_PRICE;
+      if (document.getElementById('isDigital').checked) total += OPTION_FEE;
+    }
+
+    if (isFrei) {
+      total += parseInt(document.getElementById('freiQuantity').value) * FREI_PRICE;
+    }
+
+    total += calcSingleItemsTotal();
+
+    document.getElementById('totalDisplay').innerText = total.toLocaleString() + "円(税込)";
+    buildBreakdown();
+  }
+
+  function buildBreakdown() {
+    var rows = [];
+    var isCorp = document.getElementById('hasCorporate').checked;
+    var isFrei = document.getElementById('hasFreimate').checked;
+    var hasSingle = document.getElementById('hasSingle15').checked || document.getElementById('hasSingle18').checked || document.getElementById('hasSingle21').checked || document.getElementById('hasSingleTi18').checked || document.getElementById('hasInk').checked;
+    var area = document.getElementById('breakdownList');
+
+    if (!isCorp && !isFrei && !hasSingle) {
+      area.innerHTML = '<div class="breakdown-empty">商品を選択すると内訳が表示されます</div>';
+      return;
+    }
+
+    if (isCorp) {
+      var mat = document.getElementById('corpMaterial').value;
+      var base = (mat === '黒水牛') ? KURO_PRICE : TSUGE_PRICE;
+      rows.push({ label: '法人3本セット（' + mat + '）', price: base });
+      if (document.getElementById('isDigital').checked) rows.push({ label: '　角印電子データ化オプション', price: OPTION_FEE });
+    }
+
+    if (isFrei) {
+      var freiQty = parseInt(document.getElementById('freiQuantity').value);
+      rows.push({ label: 'フリーメイト × ' + freiQty + '枚', price: freiQty * FREI_PRICE });
+    }
+
+    var singleLabels = { single15: '15ミリ丸棒', single18: '18ミリ天丸鞘付き', single21: '21ミリ角天', singleTi18: '18ミリ丸棒（チタン）' };
+    ['single15', 'single18', 'single21', 'singleTi18'].forEach(function(key) {
+      var checkbox = document.getElementById('has' + key.charAt(0).toUpperCase() + key.slice(1));
+      if (!checkbox.checked) return;
+      var material = document.getElementById(key + 'Material').value;
+      var qty = parseInt(document.getElementById(key + 'Qty').value) || 1;
+      rows.push({ label: singleLabels[key] + '（' + material + '）× ' + qty, price: SINGLE_PRICES[key][material] * qty });
+    });
+
+    if (document.getElementById('hasInk').checked) {
+      var inkQty = parseInt(document.getElementById('inkQty').value) || 1;
+      rows.push({ label: '文化朱肉30号 × ' + inkQty, price: INK_PRICE * inkQty });
+    }
+
+    rows.push({ label: '送料', price: SHIP_FEE });
+
+    area.innerHTML = rows.map(function(r) {
+      var priceText = r.price === 0 ? '無料' : r.price.toLocaleString() + '円';
+      return '<div class="breakdown-row"><span>' + r.label + '</span><span>' + priceText + '</span></div>';
+    }).join('');
+  }
+
+  function submitForm() {
+    var form = document.getElementById('orderForm');
+    if (!form.reportValidity()) return;
+    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('submitBtn').innerText = "送信中...";
+
+    var formData = new FormData(form);
+    var obj = {};
+    formData.forEach(function(value, key) { obj[key] = value; });
+
+    fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(obj)
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (data.success && data.paymentUrl) {
+        document.body.innerHTML = '<div style="text-align:center; padding:50px;"><h2>' + data.message + '</h2><p>お支払いページに移動します…</p></div>';
+        window.location.href = data.paymentUrl;
+      } else {
+        document.body.innerHTML = '<div style="text-align:center; padding:50px;"><h2>' + data.message + '</h2></div>';
+      }
+    })
+    .catch(function(err) {
+      document.getElementById('submitBtn').disabled = false;
+      document.getElementById('submitBtn').innerText = "注文を確定する";
+      alert("送信エラーが発生しました。通信環境をご確認のうえ、時間をおいて再度お試しください。");
+    });
+  }
+
+  window.onload = function() {
+    var urlParams = new URLSearchParams(window.location.search);
+    var referrer = urlParams.get('ref') || "直販（紹介なし）";
+    document.getElementById('referrerInput').value = referrer;
+
+    syncCards();
+  };
+</script>
+</body>
+</html>
