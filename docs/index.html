@@ -40,6 +40,13 @@
     .single-item-row { display: flex; gap: 10px; align-items: center; margin: 8px 0 0 25px; flex-wrap: wrap; }
     .single-item-row select { width: auto; flex: 1; }
     .single-item-row input[type="number"] { width: 70px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
+    .card-group-label { text-align: center; font-weight: bold; color: #2c3e50; font-size: 0.95em; margin-bottom: 8px; }
+    .required-badge { background: #d32f2f; color: #fff; font-size: 0.7em; padding: 2px 6px; border-radius: 3px; margin-left: 4px; font-weight: normal; vertical-align: middle; }
+    .option-hint { font-size: 0.75em; color: #999; margin-left: 25px; margin-top: 2px; }
+    .payment-note { text-align: center; font-size: 0.8em; color: #bdc3c7; margin-top: 10px; }
+    .breakdown-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #eee; font-size: 0.9em; }
+    .breakdown-row:last-child { border-bottom: none; }
+    .breakdown-empty { color: #999; font-size: 0.9em; text-align: center; padding: 6px 0; }
     @media (max-width: 680px) { .price-guide-upper { flex-direction: column; align-items: center; } .price-guide-lower { flex-direction: column; align-items: center; } .price-card-item { width: 100%; max-width: 323px; margin-bottom: 10px; } .zip-container { flex-direction: column; } .zip-input { width: 100% !important; } .zip-btn { padding: 12px; } .price-card-bottom { position: static; margin-top: 20px; } }
   </style>
 </head>
@@ -47,6 +54,7 @@
 
   <h1>印鑑注文フォーム</h1>
 
+  <div class="card-group-label">法人3本セット</div>
   <div class="price-guide-upper">
     <div class="price-card-item" id="card-tsuge" onclick="selectMaterialFromCard('薩摩本柘')">
       <img src="https://drive.google.com/thumbnail?id=13zFX2vV3De3_YwTUWXrxu14tupYXaJnR&sz=w646">
@@ -63,6 +71,7 @@
     </div>
   </div>
 
+  <div class="card-group-label">ゴム印</div>
   <div class="price-guide-lower">
     <div class="price-card-item" id="card-frei" onclick="selectFreimateFromCard()">
       <img src="https://drive.google.com/thumbnail?id=1fBz-aI7eWxfDMSwgSH8O42UwRti9-Tam&sz=w646">
@@ -154,22 +163,27 @@
 
   <div class="section">
     <h2>オプション <span class="red-text">(3本セット注文時のみ)</span></h2>
-    <div class="form-group"><label id="expressLabel" style="color:#bbb; cursor:default;"><input type="checkbox" name="isExpress" id="isExpress" disabled onchange="updatePrice()"> <strong>特急発送：2,200円(税込)</strong></label><div style="font-size:0.8em; color:#666; margin-left:25px;">通常納期 → <b>3営業日以内に発送</b> (15時締切)</div></div>
-    <div class="form-group"><label id="digitalLabel" style="color:#bbb; cursor:default;"><input type="checkbox" name="isDigital" id="isDigital" disabled onchange="updatePrice()"> <strong>角印電子データ化：2,200円(税込)</strong></label></div>
+    <div class="form-group"><label id="expressLabel" style="color:#bbb; cursor:default;"><input type="checkbox" name="isExpress" id="isExpress" disabled onchange="updatePrice()"> <strong>特急発送：2,200円(税込)</strong></label><div style="font-size:0.8em; color:#666; margin-left:25px;">通常納期 → <b>3営業日以内に発送</b> (15時締切)</div><div class="option-hint" id="expressHint">※3本セットを選択すると利用できます</div></div>
+    <div class="form-group"><label id="digitalLabel" style="color:#bbb; cursor:default;"><input type="checkbox" name="isDigital" id="isDigital" disabled onchange="updatePrice()"> <strong>角印電子データ化：2,200円(税込)</strong></label><div class="option-hint" id="digitalHint">※3本セットを選択すると利用できます</div></div>
   </div>
 
   <div class="section">
     <h2>送り先</h2>
-    <div class="form-group"><label>お名前</label><input type="text" name="userName" placeholder="例：田中 太郎" required></div>
-    <div class="form-group"><label>メールアドレス</label><input type="email" name="email" placeholder="example@mail.com" required></div>
+    <div class="form-group"><label>お名前 <span class="required-badge">必須</span></label><input type="text" name="userName" placeholder="例：田中 太郎" required></div>
+    <div class="form-group"><label>メールアドレス <span class="required-badge">必須</span></label><input type="email" name="email" placeholder="example@mail.com" required></div>
     <div class="form-group"><label>郵便番号</label><div class="zip-container"><input type="text" name="zipCode" id="zipCode" class="zip-input" placeholder="1234567" maxlength="8"><button type="button" class="zip-btn" onclick="handleZipClick()">住所を入力</button></div></div>
-    <div class="form-group"><label>都道府県・市区町村</label><input type="text" name="address_auto" id="address_auto" class="readonly-bg" placeholder="東京都荒川区..." required></div>
-    <div class="form-group"><label>番地・建物名・部屋番号</label><input type="text" name="address_manual" id="address_manual" placeholder="例：2-27-12 〇〇ビル101" required></div>
-    <div class="form-group"><label>電話番号</label><input type="text" name="tel" placeholder="090-0000-0000" required></div>
+    <div class="form-group"><label>都道府県・市区町村 <span class="required-badge">必須</span></label><input type="text" name="address_auto" id="address_auto" class="readonly-bg" placeholder="東京都荒川区..." required></div>
+    <div class="form-group"><label>番地・建物名・部屋番号 <span class="required-badge">必須</span></label><input type="text" name="address_manual" id="address_manual" placeholder="例：2-27-12 〇〇ビル101" required></div>
+    <div class="form-group"><label>電話番号 <span class="required-badge">必須</span></label><input type="text" name="tel" placeholder="090-0000-0000" required></div>
     <div class="form-group"><label>備考</label><textarea name="remarks" placeholder="ご要望などございましたらご記入ください"></textarea></div>
   </div>
 
-  <div class="price-card-bottom"><span id="deliveryLabel">納期：通常発送（7営業日以内）</span><span class="price-val" id="totalDisplay">770円(税込)</span><button type="button" id="submitBtn" class="submit-btn" onclick="submitForm()">注文を確定する</button></div>
+  <div class="section" id="breakdownSection">
+    <h2>ご注文内容</h2>
+    <div id="breakdownList"><div class="breakdown-empty">商品を選択すると内訳が表示されます</div></div>
+  </div>
+
+  <div class="price-card-bottom"><span id="deliveryLabel">納期：通常発送（7営業日以内）</span><span class="price-val" id="totalDisplay">770円(税込)</span><button type="button" id="submitBtn" class="submit-btn" onclick="submitForm()">注文を確定する</button><div class="payment-note">💳 お支払いはクレジットカード（Square決済）でお願いいたします</div></div>
 </form>
 
 <script>
@@ -253,6 +267,8 @@
     if (!isCorp) { ex.checked = false; di.checked = false; }
     document.getElementById('expressLabel').style.color = isCorp ? '#d32f2f' : '#bbb';
     document.getElementById('digitalLabel').style.color = isCorp ? '#333' : '#bbb';
+    document.getElementById('expressHint').style.display = isCorp ? 'none' : 'block';
+    document.getElementById('digitalHint').style.display = isCorp ? 'none' : 'block';
     if (isFrei) generateFreiInputs();
     updatePrice();
   }
@@ -300,6 +316,54 @@
 
     document.getElementById('totalDisplay').innerText = total.toLocaleString() + "円(税込)";
     document.getElementById('deliveryLabel').innerText = document.getElementById('isExpress').checked ? "納期：特急発送（3営業日以内）" : "納期：通常発送（7営業日以内）";
+    buildBreakdown();
+  }
+
+  function buildBreakdown() {
+    var rows = [];
+    var isCorp = document.getElementById('hasCorporate').checked;
+    var isFrei = document.getElementById('hasFreimate').checked;
+    var hasSingle = document.getElementById('hasSingle15').checked || document.getElementById('hasSingle18').checked || document.getElementById('hasSingle21').checked || document.getElementById('hasInk').checked;
+    var area = document.getElementById('breakdownList');
+
+    if (!isCorp && !isFrei && !hasSingle) {
+      area.innerHTML = '<div class="breakdown-empty">商品を選択すると内訳が表示されます</div>';
+      return;
+    }
+
+    if (isCorp) {
+      var mat = document.getElementById('corpMaterial').value;
+      var base = (mat === '黒水牛') ? KURO_PRICE : TSUGE_PRICE;
+      rows.push({ label: '法人3本セット（' + mat + '）', price: base });
+      if (document.getElementById('isExpress').checked) rows.push({ label: '　特急発送オプション', price: OPTION_FEE });
+      if (document.getElementById('isDigital').checked) rows.push({ label: '　角印電子データ化オプション', price: OPTION_FEE });
+    }
+
+    if (isFrei) {
+      var freiQty = parseInt(document.getElementById('freiQuantity').value);
+      rows.push({ label: 'フリーメイト × ' + freiQty + '枚', price: freiQty * FREI_PRICE });
+    }
+
+    var singleLabels = { single15: '15ミリ丸棒', single18: '18ミリ天丸鞘付き', single21: '21ミリ角天' };
+    ['single15', 'single18', 'single21'].forEach(function(key) {
+      var checkbox = document.getElementById('has' + key.charAt(0).toUpperCase() + key.slice(1));
+      if (!checkbox.checked) return;
+      var material = document.getElementById(key + 'Material').value;
+      var qty = parseInt(document.getElementById(key + 'Qty').value) || 1;
+      rows.push({ label: singleLabels[key] + '（' + material + '）× ' + qty, price: SINGLE_PRICES[key][material] * qty });
+    });
+
+    if (document.getElementById('hasInk').checked) {
+      var inkQty = parseInt(document.getElementById('inkQty').value) || 1;
+      rows.push({ label: '文化朱肉30号 × ' + inkQty, price: INK_PRICE * inkQty });
+    }
+
+    rows.push({ label: '送料', price: SHIP_FEE });
+
+    area.innerHTML = rows.map(function(r) {
+      var priceText = r.price === 0 ? '無料' : r.price.toLocaleString() + '円';
+      return '<div class="breakdown-row"><span>' + r.label + '</span><span>' + priceText + '</span></div>';
+    }).join('');
   }
 
   function submitForm() {
