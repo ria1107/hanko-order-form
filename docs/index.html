@@ -49,10 +49,11 @@
     .breakdown-empty { color: #999; font-size: 0.9em; text-align: center; padding: 6px 0; }
     .size-group-label { display: block; font-weight: bold; margin-bottom: 6px; font-size: 0.9em; }
     .single-mini-row { display: flex; gap: 10px; }
-    .single-mini-card { flex: 1; border: 1px solid #ddd; border-radius: 8px; padding: 8px; text-align: center; cursor: pointer; transition: 0.2s; background: #fff; display: block; }
+    .single-mini-card { flex: 1; display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; border-radius: 8px; padding: 8px; cursor: pointer; transition: 0.2s; background: #fff; min-width: 0; }
     .single-mini-card.selected { border-color: #d32f2f; background: #fff9f9; box-shadow: 0 2px 8px rgba(211,47,47,0.15); }
-    .single-mini-card img { width: 100%; height: 64px; object-fit: cover; border-radius: 4px; display: block; margin-bottom: 6px; }
-    .single-mini-card input[type="checkbox"] { transform: scale(1.3); cursor: pointer; margin-bottom: 4px; }
+    .single-mini-card input[type="checkbox"] { transform: scale(1.3); cursor: pointer; flex-shrink: 0; }
+    .single-mini-card img { width: 64px; height: 64px; object-fit: contain; background: #f4f7f6; border-radius: 4px; flex-shrink: 0; }
+    .single-mini-card .mini-info { min-width: 0; }
     .single-mini-card .mini-name { font-weight: bold; font-size: 0.85em; color: #2c3e50; }
     .single-mini-card .mini-price { color: #d32f2f; font-weight: bold; font-size: 0.9em; margin-top: 2px; }
     @media (max-width: 680px) { .price-guide-upper { flex-direction: column; align-items: center; } .price-guide-lower { flex-direction: column; align-items: center; } .price-card-item { width: 100%; max-width: 323px; margin-bottom: 10px; } .zip-container { flex-direction: column; } .zip-input { width: 100% !important; } .zip-btn { padding: 12px; } .price-card-bottom { position: static; margin-top: 20px; } }
@@ -133,16 +134,14 @@
       <label class="size-group-label">15ミリ丸棒</label>
       <div class="single-mini-row">
         <label class="single-mini-card" id="miniCard-single15-薩摩本柘">
-          <img src="https://drive.google.com/thumbnail?id=18kAXuT9sS5wjkNhr-Vwvbe8-Dh7xqsxQ&sz=w300">
           <input type="checkbox" id="miniChk-single15-薩摩本柘" onchange="selectSingleSizeMat('single15','薩摩本柘')">
-          <div class="mini-name">薩摩本柘</div>
-          <div class="mini-price">3,630円</div>
+          <img src="https://drive.google.com/thumbnail?id=18kAXuT9sS5wjkNhr-Vwvbe8-Dh7xqsxQ&sz=w300">
+          <div class="mini-info"><div class="mini-name">薩摩本柘</div><div class="mini-price">3,630円</div></div>
         </label>
         <label class="single-mini-card" id="miniCard-single15-黒水牛">
-          <img src="https://drive.google.com/thumbnail?id=1WUSQPrBt1ShW0EXcrKcgb7EZ4t26-VjW&sz=w300">
           <input type="checkbox" id="miniChk-single15-黒水牛" onchange="selectSingleSizeMat('single15','黒水牛')">
-          <div class="mini-name">黒水牛</div>
-          <div class="mini-price">4,070円</div>
+          <img src="https://drive.google.com/thumbnail?id=1WUSQPrBt1ShW0EXcrKcgb7EZ4t26-VjW&sz=w300">
+          <div class="mini-info"><div class="mini-name">黒水牛</div><div class="mini-price">4,070円</div></div>
         </label>
       </div>
       <input type="checkbox" name="hasSingle15" id="hasSingle15" style="display:none;">
@@ -157,16 +156,14 @@
       <label class="size-group-label">18ミリ天丸鞘付き</label>
       <div class="single-mini-row">
         <label class="single-mini-card" id="miniCard-single18-薩摩本柘">
-          <img src="https://drive.google.com/thumbnail?id=1jLuP3W4Y6vNmGKX1RgZgH-3vobMn2l2a&sz=w300">
           <input type="checkbox" id="miniChk-single18-薩摩本柘" onchange="selectSingleSizeMat('single18','薩摩本柘')">
-          <div class="mini-name">薩摩本柘</div>
-          <div class="mini-price">6,270円</div>
+          <img src="https://drive.google.com/thumbnail?id=1jLuP3W4Y6vNmGKX1RgZgH-3vobMn2l2a&sz=w300">
+          <div class="mini-info"><div class="mini-name">薩摩本柘</div><div class="mini-price">6,270円</div></div>
         </label>
         <label class="single-mini-card" id="miniCard-single18-黒水牛">
-          <img src="https://drive.google.com/thumbnail?id=1H8hFngdPevGh8g-js3IwfyekMmfifTqU&sz=w300">
           <input type="checkbox" id="miniChk-single18-黒水牛" onchange="selectSingleSizeMat('single18','黒水牛')">
-          <div class="mini-name">黒水牛</div>
-          <div class="mini-price">11,330円</div>
+          <img src="https://drive.google.com/thumbnail?id=1H8hFngdPevGh8g-js3IwfyekMmfifTqU&sz=w300">
+          <div class="mini-info"><div class="mini-name">黒水牛</div><div class="mini-price">11,330円</div></div>
         </label>
       </div>
       <input type="checkbox" name="hasSingle18" id="hasSingle18" style="display:none;">
@@ -181,16 +178,14 @@
       <label class="size-group-label">21ミリ角天</label>
       <div class="single-mini-row">
         <label class="single-mini-card" id="miniCard-single21-薩摩本柘">
-          <img src="https://drive.google.com/thumbnail?id=1CSir5UDbe1ptisNJWp-qtIYua7BV6cyh&sz=w300">
           <input type="checkbox" id="miniChk-single21-薩摩本柘" onchange="selectSingleSizeMat('single21','薩摩本柘')">
-          <div class="mini-name">薩摩本柘</div>
-          <div class="mini-price">5,000円</div>
+          <img src="https://drive.google.com/thumbnail?id=1CSir5UDbe1ptisNJWp-qtIYua7BV6cyh&sz=w300">
+          <div class="mini-info"><div class="mini-name">薩摩本柘</div><div class="mini-price">5,000円</div></div>
         </label>
         <label class="single-mini-card" id="miniCard-single21-黒水牛">
-          <img src="https://drive.google.com/thumbnail?id=1iSAKITJP_aHcxgXDud-3iVHP35RnmchR&sz=w300">
           <input type="checkbox" id="miniChk-single21-黒水牛" onchange="selectSingleSizeMat('single21','黒水牛')">
-          <div class="mini-name">黒水牛</div>
-          <div class="mini-price">13,000円</div>
+          <img src="https://drive.google.com/thumbnail?id=1iSAKITJP_aHcxgXDud-3iVHP35RnmchR&sz=w300">
+          <div class="mini-info"><div class="mini-name">黒水牛</div><div class="mini-price">13,000円</div></div>
         </label>
       </div>
       <input type="checkbox" name="hasSingle21" id="hasSingle21" style="display:none;">
