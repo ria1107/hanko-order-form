@@ -47,16 +47,14 @@
     .breakdown-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #eee; font-size: 0.9em; }
     .breakdown-row:last-child { border-bottom: none; }
     .breakdown-empty { color: #999; font-size: 0.9em; text-align: center; padding: 6px 0; }
-    .size-card { border: 1px solid #ddd; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; background: #fff; transition: 0.2s; }
-    .size-card.checked { border-color: #d32f2f; background: #fff9f9; }
-    .size-card-main { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-    .size-card-main input[type="checkbox"] { transform: scale(1.4); cursor: pointer; flex-shrink: 0; }
-    .size-card-main img { width: 48px; height: 48px; object-fit: cover; border-radius: 4px; flex-shrink: 0; }
-    .size-card-main .size-name { flex: 1; font-weight: bold; color: #2c3e50; font-size: 0.95em; }
-    .size-card-main .size-price { font-weight: bold; color: #d32f2f; white-space: nowrap; }
-    .size-mat-toggle { display: flex; gap: 8px; margin-top: 8px; margin-left: 58px; }
-    .mat-pill { border: 1px solid #ccc; background: #f4f7f6; color: #666; border-radius: 20px; padding: 4px 12px; font-size: 0.8em; cursor: pointer; transition: 0.2s; }
-    .mat-pill.selected { background: #2c3e50; color: #fff; border-color: #2c3e50; }
+    .size-group-label { display: block; font-weight: bold; margin-bottom: 6px; font-size: 0.9em; }
+    .single-mini-row { display: flex; gap: 10px; }
+    .single-mini-card { flex: 1; border: 1px solid #ddd; border-radius: 8px; padding: 8px; text-align: center; cursor: pointer; transition: 0.2s; background: #fff; display: block; }
+    .single-mini-card.selected { border-color: #d32f2f; background: #fff9f9; box-shadow: 0 2px 8px rgba(211,47,47,0.15); }
+    .single-mini-card img { width: 100%; height: 64px; object-fit: cover; border-radius: 4px; display: block; margin-bottom: 6px; }
+    .single-mini-card input[type="checkbox"] { transform: scale(1.3); cursor: pointer; margin-bottom: 4px; }
+    .single-mini-card .mini-name { font-weight: bold; font-size: 0.85em; color: #2c3e50; }
+    .single-mini-card .mini-price { color: #d32f2f; font-weight: bold; font-size: 0.9em; margin-top: 2px; }
     @media (max-width: 680px) { .price-guide-upper { flex-direction: column; align-items: center; } .price-guide-lower { flex-direction: column; align-items: center; } .price-card-item { width: 100%; max-width: 323px; margin-bottom: 10px; } .zip-container { flex-direction: column; } .zip-input { width: 100% !important; } .zip-btn { padding: 12px; } .price-card-bottom { position: static; margin-top: 20px; } }
   </style>
 </head>
@@ -132,56 +130,70 @@
     <h2>単品注文 <span class="red-text">(1本から購入できます)</span></h2>
 
     <div class="form-group">
-      <label>サイズ・材質を選択</label>
-
-      <div class="size-card" id="sizeCard-single15">
-        <label class="size-card-main">
-          <input type="checkbox" name="hasSingle15" id="hasSingle15" onchange="onSizeCheckChange('single15')">
-          <img id="sizeImg-single15" src="https://drive.google.com/thumbnail?id=18kAXuT9sS5wjkNhr-Vwvbe8-Dh7xqsxQ&sz=w200">
-          <span class="size-name">15ミリ丸棒</span>
-          <span class="size-price" id="sizePriceText-single15">3,630円</span>
+      <label class="size-group-label">15ミリ丸棒</label>
+      <div class="single-mini-row">
+        <label class="single-mini-card" id="miniCard-single15-薩摩本柘">
+          <img src="https://drive.google.com/thumbnail?id=18kAXuT9sS5wjkNhr-Vwvbe8-Dh7xqsxQ&sz=w300">
+          <input type="checkbox" id="miniChk-single15-薩摩本柘" onchange="selectSingleSizeMat('single15','薩摩本柘')">
+          <div class="mini-name">薩摩本柘</div>
+          <div class="mini-price">3,630円</div>
         </label>
-        <div class="size-mat-toggle">
-          <button type="button" class="mat-pill selected" id="single15MatBtn-薩摩本柘" onclick="selectSizeMaterial('single15','薩摩本柘')">薩摩本柘</button>
-          <button type="button" class="mat-pill" id="single15MatBtn-黒水牛" onclick="selectSizeMaterial('single15','黒水牛')">黒水牛</button>
-        </div>
+        <label class="single-mini-card" id="miniCard-single15-黒水牛">
+          <img src="https://drive.google.com/thumbnail?id=1WUSQPrBt1ShW0EXcrKcgb7EZ4t26-VjW&sz=w300">
+          <input type="checkbox" id="miniChk-single15-黒水牛" onchange="selectSingleSizeMat('single15','黒水牛')">
+          <div class="mini-name">黒水牛</div>
+          <div class="mini-price">4,070円</div>
+        </label>
       </div>
+      <input type="checkbox" name="hasSingle15" id="hasSingle15" style="display:none;">
       <div id="single15Row" class="single-item-row" style="display:none;">
         <input type="hidden" name="single15Material" id="single15Material" value="薩摩本柘">
         <input type="number" name="single15Qty" id="single15Qty" value="1" min="1" onchange="updatePrice()"> 本
         <div class="form-group" style="width:100%; margin-top:8px;"><label>印字内容（彫刻するお名前）</label><textarea name="single15Text" placeholder="例：山田太郎　※複数本ご注文の場合は1行ずつご記入ください"></textarea></div>
       </div>
+    </div>
 
-      <div class="size-card" id="sizeCard-single18">
-        <label class="size-card-main">
-          <input type="checkbox" name="hasSingle18" id="hasSingle18" onchange="onSizeCheckChange('single18')">
-          <img id="sizeImg-single18" src="https://drive.google.com/thumbnail?id=1jLuP3W4Y6vNmGKX1RgZgH-3vobMn2l2a&sz=w200">
-          <span class="size-name">18ミリ天丸鞘付き</span>
-          <span class="size-price" id="sizePriceText-single18">6,270円</span>
+    <div class="form-group">
+      <label class="size-group-label">18ミリ天丸鞘付き</label>
+      <div class="single-mini-row">
+        <label class="single-mini-card" id="miniCard-single18-薩摩本柘">
+          <img src="https://drive.google.com/thumbnail?id=1jLuP3W4Y6vNmGKX1RgZgH-3vobMn2l2a&sz=w300">
+          <input type="checkbox" id="miniChk-single18-薩摩本柘" onchange="selectSingleSizeMat('single18','薩摩本柘')">
+          <div class="mini-name">薩摩本柘</div>
+          <div class="mini-price">6,270円</div>
         </label>
-        <div class="size-mat-toggle">
-          <button type="button" class="mat-pill selected" id="single18MatBtn-薩摩本柘" onclick="selectSizeMaterial('single18','薩摩本柘')">薩摩本柘</button>
-          <button type="button" class="mat-pill" id="single18MatBtn-黒水牛" onclick="selectSizeMaterial('single18','黒水牛')">黒水牛</button>
-        </div>
+        <label class="single-mini-card" id="miniCard-single18-黒水牛">
+          <img src="https://drive.google.com/thumbnail?id=1H8hFngdPevGh8g-js3IwfyekMmfifTqU&sz=w300">
+          <input type="checkbox" id="miniChk-single18-黒水牛" onchange="selectSingleSizeMat('single18','黒水牛')">
+          <div class="mini-name">黒水牛</div>
+          <div class="mini-price">11,330円</div>
+        </label>
       </div>
+      <input type="checkbox" name="hasSingle18" id="hasSingle18" style="display:none;">
       <div id="single18Row" class="single-item-row" style="display:none;">
         <input type="hidden" name="single18Material" id="single18Material" value="薩摩本柘">
         <input type="number" name="single18Qty" id="single18Qty" value="1" min="1" onchange="updatePrice()"> 本
         <div class="form-group" style="width:100%; margin-top:8px;"><label>印字内容（彫刻するお名前）</label><textarea name="single18Text" placeholder="例：山田太郎　※複数本ご注文の場合は1行ずつご記入ください"></textarea></div>
       </div>
+    </div>
 
-      <div class="size-card" id="sizeCard-single21">
-        <label class="size-card-main">
-          <input type="checkbox" name="hasSingle21" id="hasSingle21" onchange="onSizeCheckChange('single21')">
-          <img id="sizeImg-single21" src="https://drive.google.com/thumbnail?id=1CSir5UDbe1ptisNJWp-qtIYua7BV6cyh&sz=w200">
-          <span class="size-name">21ミリ角天</span>
-          <span class="size-price" id="sizePriceText-single21">5,000円</span>
+    <div class="form-group">
+      <label class="size-group-label">21ミリ角天</label>
+      <div class="single-mini-row">
+        <label class="single-mini-card" id="miniCard-single21-薩摩本柘">
+          <img src="https://drive.google.com/thumbnail?id=1CSir5UDbe1ptisNJWp-qtIYua7BV6cyh&sz=w300">
+          <input type="checkbox" id="miniChk-single21-薩摩本柘" onchange="selectSingleSizeMat('single21','薩摩本柘')">
+          <div class="mini-name">薩摩本柘</div>
+          <div class="mini-price">5,000円</div>
         </label>
-        <div class="size-mat-toggle">
-          <button type="button" class="mat-pill selected" id="single21MatBtn-薩摩本柘" onclick="selectSizeMaterial('single21','薩摩本柘')">薩摩本柘</button>
-          <button type="button" class="mat-pill" id="single21MatBtn-黒水牛" onclick="selectSizeMaterial('single21','黒水牛')">黒水牛</button>
-        </div>
+        <label class="single-mini-card" id="miniCard-single21-黒水牛">
+          <img src="https://drive.google.com/thumbnail?id=1iSAKITJP_aHcxgXDud-3iVHP35RnmchR&sz=w300">
+          <input type="checkbox" id="miniChk-single21-黒水牛" onchange="selectSingleSizeMat('single21','黒水牛')">
+          <div class="mini-name">黒水牛</div>
+          <div class="mini-price">13,000円</div>
+        </label>
       </div>
+      <input type="checkbox" name="hasSingle21" id="hasSingle21" style="display:none;">
       <div id="single21Row" class="single-item-row" style="display:none;">
         <input type="hidden" name="single21Material" id="single21Material" value="薩摩本柘">
         <input type="number" name="single21Qty" id="single21Qty" value="1" min="1" onchange="updatePrice()"> 本
@@ -242,18 +254,6 @@
     single18: { '薩摩本柘': 6270,  '黒水牛': 11330 },
     single21: { '薩摩本柘': 5000,  '黒水牛': 13000 }
   };
-  var SINGLE_IMAGES = {
-    '薩摩本柘': {
-      single15: 'https://drive.google.com/thumbnail?id=18kAXuT9sS5wjkNhr-Vwvbe8-Dh7xqsxQ&sz=w200',
-      single18: 'https://drive.google.com/thumbnail?id=1jLuP3W4Y6vNmGKX1RgZgH-3vobMn2l2a&sz=w200',
-      single21: 'https://drive.google.com/thumbnail?id=1CSir5UDbe1ptisNJWp-qtIYua7BV6cyh&sz=w200'
-    },
-    '黒水牛': {
-      single15: 'https://drive.google.com/thumbnail?id=1WUSQPrBt1ShW0EXcrKcgb7EZ4t26-VjW&sz=w200',
-      single18: 'https://drive.google.com/thumbnail?id=1H8hFngdPevGh8g-js3IwfyekMmfifTqU&sz=w200',
-      single21: 'https://drive.google.com/thumbnail?id=1iSAKITJP_aHcxgXDud-3iVHP35RnmchR&sz=w200'
-    }
-  };
   var INK_PRICE = 950;
 
   function toggleSingleRow(checkboxId, rowId) {
@@ -262,19 +262,25 @@
     updatePrice();
   }
 
-  function selectSizeMaterial(key, mat) {
-    document.getElementById(key + 'MatBtn-薩摩本柘').className = (mat === '薩摩本柘') ? 'mat-pill selected' : 'mat-pill';
-    document.getElementById(key + 'MatBtn-黒水牛').className = (mat === '黒水牛') ? 'mat-pill selected' : 'mat-pill';
-    document.getElementById(key + 'Material').value = mat;
-    document.getElementById('sizeImg-' + key).src = SINGLE_IMAGES[mat][key];
-    document.getElementById('sizePriceText-' + key).innerText = SINGLE_PRICES[key][mat].toLocaleString() + '円';
-    updatePrice();
-  }
+  function selectSingleSizeMat(key, mat) {
+    var otherMat = (mat === '薩摩本柘') ? '黒水牛' : '薩摩本柘';
+    var thisChk = document.getElementById('miniChk-' + key + '-' + mat);
+    var otherChk = document.getElementById('miniChk-' + key + '-' + otherMat);
+    var mainChk = document.getElementById('has' + key.charAt(0).toUpperCase() + key.slice(1));
 
-  function onSizeCheckChange(key) {
-    var cb = document.getElementById('has' + key.charAt(0).toUpperCase() + key.slice(1));
-    document.getElementById(key + 'Row').style.display = cb.checked ? 'flex' : 'none';
-    document.getElementById('sizeCard-' + key).className = cb.checked ? 'size-card checked' : 'size-card';
+    if (thisChk.checked) {
+      otherChk.checked = false;
+      mainChk.checked = true;
+      document.getElementById(key + 'Material').value = mat;
+      document.getElementById(key + 'Row').style.display = 'flex';
+    } else {
+      mainChk.checked = false;
+      document.getElementById(key + 'Row').style.display = 'none';
+    }
+
+    document.getElementById('miniCard-' + key + '-薩摩本柘').className = document.getElementById('miniChk-' + key + '-薩摩本柘').checked ? 'single-mini-card selected' : 'single-mini-card';
+    document.getElementById('miniCard-' + key + '-黒水牛').className = document.getElementById('miniChk-' + key + '-黒水牛').checked ? 'single-mini-card selected' : 'single-mini-card';
+
     updatePrice();
   }
 
@@ -468,9 +474,6 @@
     document.getElementById('tsugeCardPrice').textContent = priceText + '円(税込)';
     document.getElementById('tsugeOptionPrice').textContent = '薩摩本柘 (' + priceText + '円(税込))';
 
-    selectSizeMaterial('single15', '薩摩本柘');
-    selectSizeMaterial('single18', '薩摩本柘');
-    selectSizeMaterial('single21', '薩摩本柘');
     syncCards();
   };
 </script>
