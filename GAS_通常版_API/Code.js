@@ -14,6 +14,7 @@
  *   SQUARE_LOCATION_ID   SquareのLocation ID
  *   SQUARE_API_BASE      'https://connect.squareupsandbox.com'(テスト) または
  *                         'https://connect.squareup.com'(本番)
+ *   NOTION_API_KEY       Notion連携用インテグレーションのシークレット
  *
  * これはGAS_通常版(印鑑注文)と同じ注文台帳に書き込むAPI専用プロジェクト。
  * 画面(HTML)はGitHub Pagesで配信し、このプロジェクトはdoPostで
@@ -29,6 +30,72 @@ const SQUARE_ACCESS_TOKEN = SCRIPT_PROPS.getProperty('SQUARE_ACCESS_TOKEN');
 const SQUARE_LOCATION_ID = SCRIPT_PROPS.getProperty('SQUARE_LOCATION_ID');
 const SQUARE_API_BASE = SCRIPT_PROPS.getProperty('SQUARE_API_BASE') || 'https://connect.squareupsandbox.com';
 const SS_URL = 'https://docs.google.com/spreadsheets/d/' + SPREADSHEET_ID + '/edit';
+
+// ===== Notion連携(注文後にDB_プロジェクト・DB_現金出納帳_F3へ自動記録) =====
+const NOTION_VERSION = '2025-09-03';
+const NOTION_DB_PROJECT_DATASOURCE_ID = '04875878-4070-47bb-85ab-fed881e7d7e4';
+const NOTION_DB_CASHBOOK_DATASOURCE_ID = 'd5ba36f0-59e9-4377-b1ad-0cc43144afc5';
+const NOTION_STAFF_SUGIKADO_ID = '196d872b-594c-8122-97f7-000281a411a0';
+
+function _notionApiRequest(path, payload) {
+  var token = SCRIPT_PROPS.getProperty('NOTION_API_KEY');
+  if (!token) {
+    console.error('スクリプトプロパティ「NOTION_API_KEY」が未設定のため、Notionへの記録をスキップしました');
+    return null;
+  }
+  var res = UrlFetchApp.fetch('https://api.notion.com/v1/' + path, {
+    method: 'post',
+    contentType: 'application/json',
+    headers: { 'Authorization': 'Bearer ' + token, 'Notion-Version': NOTION_VERSION },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
+  var body = JSON.parse(res.getContentText());
+  if (res.getResponseCode() >= 300) {
+    console.error('Notion APIエラー(' + path + '): ' + res.getContentText());
+    return null;
+  }
+  return body;
+}
+
+// 注文をNotionのDB_プロジェクト(案件ページ)とDB_現金出納帳_F3(商品ごとの明細行)に記録する。
+// 失敗しても注文自体(メール送信・決済)には影響させない。呼び出し側でtry/catchすること。
+function recordOrderToNotion_(formData, lineItems, orderDate) {
+  var dateStr = Utilities.formatDate(orderDate, 'Asia/Tokyo', 'yyMMdd');
+  var isoDate = Utilities.formatDate(orderDate, 'Asia/Tokyo', 'yyyy-MM-dd');
+  var projectTitle = dateStr + '_' + formData.userName + '_印鑑注文';
+
+  var projectPage = _notionApiRequest('pages', {
+    parent: { type: 'data_source_id', data_source_id: NOTION_DB_PROJECT_DATASOURCE_ID },
+    template: { type: 'default' },
+    properties: {
+      '案件名': { title: [{ text: { content: projectTitle } }] },
+      '開始日': { date: { start: isoDate } },
+      '担当者': { people: [{ id: NOTION_STAFF_SUGIKADO_ID }] },
+      '進捗状況': { status: { name: '完了(クレジット)' } },
+      '事業区分': { select: { name: 'F3' } }
+    }
+  });
+  if (!projectPage || !projectPage.id) return;
+
+  lineItems.forEach(function(item) {
+    var qty = parseInt(item.quantity, 10) || 1;
+    var unitPriceExcl = Math.round(item.base_price_money.amount / 1.1);
+    _notionApiRequest('pages', {
+      parent: { type: 'data_source_id', data_source_id: NOTION_DB_CASHBOOK_DATASOURCE_ID },
+      properties: {
+        '品目': { title: [{ text: { content: item.name } }] },
+        '日付': { date: { start: isoDate } },
+        '数量': { number: qty },
+        '項目': { select: { name: '売上' } },
+        '種別': { select: { name: '印鑑' } },
+        '単価(税抜)': { number: unitPriceExcl },
+        '課税対象': { select: { name: 'はい(10%)' } },
+        'DB_プロジェクト': { relation: [{ id: projectPage.id }] }
+      }
+    });
+  });
+}
 
 // 価格設定（税込）
 const PRICE_CORP_TSUGE_NORMAL = 8800;
@@ -193,6 +260,12 @@ function processOrderForm(formData) {
   ]);
 
   var paymentUrl = createSquarePaymentLink(lineItems, formData.userName);
+
+  try {
+    recordOrderToNotion_(formData, lineItems, new Date());
+  } catch (notionErr) {
+    console.error('Notion記録でエラー: ' + notionErr.toString());
+  }
 
   sendOrderEmails(formData, total, hasCorp, corpMaterial, innerTitle, hasFrei, freiTexts, singleResult, inkQty, isExpress, isDigital, deliveryType, fullAddress, corpFont, paymentUrl);
   return { message: "ご注文を承りました。内容確認のメールをお送りしました。", paymentUrl: paymentUrl };
