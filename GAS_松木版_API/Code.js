@@ -74,8 +74,7 @@ function recordOrderToNotion_(formData, lineItems, orderDate) {
       '案件名': { title: [{ text: { content: projectTitle } }] },
       '開始日': { date: { start: isoDate } },
       '担当者': { people: [{ id: NOTION_STAFF_SUGIKADO_ID }] },
-      '進捗状況': { status: { name: '完了(クレジット)' } },
-      '事業区分': { select: { name: 'F3' } }
+      '進捗状況': { status: { name: '完了(クレジット)' } }
     }
   });
   if (!projectPage || !projectPage.id) return;
