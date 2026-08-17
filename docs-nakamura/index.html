@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>印鑑注文フォーム（送料無料）</title>
   <style>
-    body { font-family: sans-serif; color: #333; max-width: 700px; margin: 0 auto; padding: 20px; background: #f4f7f6; }
+    body { font-family: sans-serif; color: #333; max-width: 1060px; margin: 0 auto; padding: 20px; background: #f4f7f6; }
+    .section, .price-card-bottom, #breakdownSection { max-width: 700px; margin-left: auto; margin-right: auto; }
     h1 { text-align: center; color: #2c3e50; margin-bottom: 20px; font-size: 2.2em; border-bottom: 3px solid #3498db; display: inline-block; width: 100%; padding-bottom: 10px; }
     .price-guide-upper { display: flex; gap: 15px; margin-bottom: 15px; justify-content: center; }
     .price-guide-lower { display: flex; justify-content: center; margin-bottom: 25px; }
@@ -53,8 +54,6 @@
     .single-mini-card.selected { border-color: #d32f2f; background: #fff9f9; box-shadow: 0 2px 8px rgba(211,47,47,0.15); }
     .single-mini-card input[type="checkbox"] { transform: scale(1.3); cursor: pointer; flex-shrink: 0; }
     .single-mini-card img { width: 64px; height: 64px; object-fit: contain; background: #f4f7f6; border-radius: 4px; flex-shrink: 0; }
-    .mini-photo-placeholder { width: 64px; height: 64px; border-radius: 4px; background: #ddd; color: #888; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.8em; flex-shrink: 0; }
-    .price-card-placeholder { width: 100%; height: 160px; background: #ddd; color: #888; display: flex; align-items: center; justify-content: center; font-weight: bold; border-bottom: 1px solid #eee; }
     .single-mini-card .mini-info { min-width: 0; }
     .single-mini-card .mini-name { font-weight: bold; font-size: 0.85em; color: #2c3e50; }
     .single-mini-card .mini-price { color: #d32f2f; font-weight: bold; font-size: 0.9em; margin-top: 2px; }
@@ -82,7 +81,7 @@
     </div>
 
     <div class="price-card-item" id="card-titan" onclick="selectMaterialFromCard('チタン')">
-      <div class="price-card-placeholder">チタン</div>
+      <img src="https://drive.google.com/thumbnail?id=1slYAXqbrB_ofLMwAXTY0c2D2n-gNVsO1&sz=w646">
       <div class="card-checkbox-area"><input type="checkbox" id="check-titan"> <span class="name">チタン 3本セット</span></div>
       <div class="price">102,850円(税込)</div>
       <div class="shipping-label">3営業日以内に発送【送料無料】</div>
@@ -155,7 +154,7 @@
         </label>
         <label class="single-mini-card" id="miniCard-single15-チタン">
           <input type="checkbox" id="miniChk-single15-チタン" onchange="selectSingleSizeMat('single15','チタン')">
-          <div class="mini-photo-placeholder">チタン</div>
+          <img src="https://drive.google.com/thumbnail?id=1jWpkY8AdC59QmxoJCHvD7nwx3GwjH0ey&sz=w300">
           <div class="mini-info"><div class="mini-name">チタン</div><div class="mini-price">27,500円</div></div>
         </label>
       </div>
@@ -182,7 +181,7 @@
         </label>
         <label class="single-mini-card" id="miniCard-single18-チタン">
           <input type="checkbox" id="miniChk-single18-チタン" onchange="selectSingleSizeMat('single18','チタン')">
-          <div class="mini-photo-placeholder">チタン</div>
+          <img src="https://drive.google.com/thumbnail?id=1wsYH5w_pNMPqMIWn71YOK0-pt2PtsCbE&sz=w300">
           <div class="mini-info"><div class="mini-name">チタン</div><div class="mini-price">33,000円</div></div>
         </label>
       </div>
@@ -209,7 +208,7 @@
         </label>
         <label class="single-mini-card" id="miniCard-single21-チタン">
           <input type="checkbox" id="miniChk-single21-チタン" onchange="selectSingleSizeMat('single21','チタン')">
-          <div class="mini-photo-placeholder">チタン</div>
+          <img src="https://drive.google.com/thumbnail?id=16qZVFNc08JVWVm1drRr7_NwmY0yTUxq0&sz=w300">
           <div class="mini-info"><div class="mini-name">チタン</div><div class="mini-price">49,500円</div></div>
         </label>
       </div>
