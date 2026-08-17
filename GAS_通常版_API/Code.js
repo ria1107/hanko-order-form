@@ -106,11 +106,18 @@ const SHIPPING_FEE = 770;
 const OPTION_EXPRESS_FEE = 2200;
 const OPTION_DIGITAL_FEE = 2200;
 
-// 単品注文（1本から購入可）の価格表（税込）
+// 単品注文（1本から購入可）の価格表（税込）。サイズ×材質の組み合わせごとに独立した商品として扱う
+// (同じサイズで複数の材質を同時に注文できるようにするため)。
 const SINGLE_ITEMS_CONFIG = [
-  { checkboxField: 'hasSingle15', materialField: 'single15Material', qtyField: 'single15Qty', textField: 'single15Text', label: '15ミリ丸棒',        prices: { '薩摩本柘': 3630,  '黒水牛': 4070,  'チタン': 27500 } },
-  { checkboxField: 'hasSingle18', materialField: 'single18Material', qtyField: 'single18Qty', textField: 'single18Text', label: '18ミリ天丸鞘付き', prices: { '薩摩本柘': 6270,  '黒水牛': 11330, 'チタン': 33000 } },
-  { checkboxField: 'hasSingle21', materialField: 'single21Material', qtyField: 'single21Qty', textField: 'single21Text', label: '21ミリ角天',        prices: { '薩摩本柘': 5000,  '黒水牛': 13000, 'チタン': 49500 } },
+  { checkboxField: 'hasSingle15Tsuge', qtyField: 'single15TsugeQty', textField: 'single15TsugeText', label: '15ミリ丸棒（薩摩本柘）',        price: 3630 },
+  { checkboxField: 'hasSingle15Kuro',  qtyField: 'single15KuroQty',  textField: 'single15KuroText',  label: '15ミリ丸棒（黒水牛）',        price: 4070 },
+  { checkboxField: 'hasSingle15Titan', qtyField: 'single15TitanQty', textField: 'single15TitanText', label: '15ミリ丸棒（チタン）',        price: 27500 },
+  { checkboxField: 'hasSingle18Tsuge', qtyField: 'single18TsugeQty', textField: 'single18TsugeText', label: '18ミリ天丸鞘付き（薩摩本柘）', price: 6270 },
+  { checkboxField: 'hasSingle18Kuro',  qtyField: 'single18KuroQty',  textField: 'single18KuroText',  label: '18ミリ天丸鞘付き（黒水牛）',  price: 11330 },
+  { checkboxField: 'hasSingle18Titan', qtyField: 'single18TitanQty', textField: 'single18TitanText', label: '18ミリ天丸鞘付き（チタン）',  price: 33000 },
+  { checkboxField: 'hasSingle21Tsuge', qtyField: 'single21TsugeQty', textField: 'single21TsugeText', label: '21ミリ角天（薩摩本柘）',        price: 5000 },
+  { checkboxField: 'hasSingle21Kuro',  qtyField: 'single21KuroQty',  textField: 'single21KuroText',  label: '21ミリ角天（黒水牛）',        price: 13000 },
+  { checkboxField: 'hasSingle21Titan', qtyField: 'single21TitanQty', textField: 'single21TitanText', label: '21ミリ角天（チタン）',        price: 49500 },
 ];
 const PRICE_INK_BUNKA30 = 950; // 文化朱肉30号
 
@@ -121,7 +128,7 @@ function toHalfWidth(str) {
   });
 }
 
-// フォームで選ばれた単品注文（15/18/21ミリ）を集計する
+// フォームで選ばれた単品注文（15/18/21ミリ × 薩摩本柘/黒水牛/チタン）を集計する
 function _buildSingleOrderItems(formData) {
   var lines = [];
   var items = [];
@@ -129,13 +136,12 @@ function _buildSingleOrderItems(formData) {
   SINGLE_ITEMS_CONFIG.forEach(function(cfg) {
     var checked = (formData[cfg.checkboxField] === 'true' || formData[cfg.checkboxField] === 'on');
     if (!checked) return;
-    var material = formData[cfg.materialField] || '薩摩本柘';
     var qty = parseInt(formData[cfg.qtyField]) || 1;
-    var unitPrice = cfg.prices[material];
+    var unitPrice = cfg.price;
     var text = toHalfWidth((formData[cfg.textField] || "").trim());
     subtotal += unitPrice * qty;
-    lines.push(cfg.label + "（" + material + "）× " + qty + "本" + (text ? "　印字内容：" + text : ""));
-    items.push({ name: cfg.label + "（" + material + "）", qty: qty, unitPrice: unitPrice });
+    lines.push(cfg.label + " × " + qty + "本" + (text ? "　印字内容：" + text : ""));
+    items.push({ name: cfg.label, qty: qty, unitPrice: unitPrice });
   });
   return { text: lines.join(" / "), subtotal: subtotal, lines: lines, items: items };
 }

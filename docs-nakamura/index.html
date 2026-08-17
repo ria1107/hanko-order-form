@@ -7,6 +7,7 @@
   <style>
     body { font-family: sans-serif; color: #333; max-width: 1060px; margin: 0 auto; padding: 20px; background: #f4f7f6; }
     .section, .price-card-bottom, #breakdownSection { max-width: 700px; margin-left: auto; margin-right: auto; }
+    #singleItemsSection { max-width: none; }
     h1 { text-align: center; color: #2c3e50; margin-bottom: 20px; font-size: 2.2em; border-bottom: 3px solid #3498db; display: inline-block; width: 100%; padding-bottom: 10px; }
     .price-guide-upper { display: flex; gap: 15px; margin-bottom: 15px; justify-content: center; }
     .price-guide-lower { display: flex; justify-content: center; margin-bottom: 25px; }
@@ -136,87 +137,114 @@
     <div id="freiStampArea"></div>
   </div>
 
-  <div class="section">
-    <h2>単品注文 <span class="red-text">(1本から購入できます)</span></h2>
+  <div class="section" id="singleItemsSection">
+    <h2>単品注文 <span class="red-text">(1本から購入できます・材質を複数選んでも購入できます)</span></h2>
 
     <div class="form-group">
       <label class="size-group-label">15ミリ丸棒</label>
       <div class="single-mini-row">
-        <label class="single-mini-card" id="miniCard-single15-薩摩本柘">
-          <input type="checkbox" id="miniChk-single15-薩摩本柘" onchange="selectSingleSizeMat('single15','薩摩本柘')">
+        <label class="single-mini-card" id="miniCard-single15Tsuge">
+          <input type="checkbox" name="hasSingle15Tsuge" id="hasSingle15Tsuge" onchange="onSingleItemToggle('single15Tsuge')">
           <img src="https://drive.google.com/thumbnail?id=18kAXuT9sS5wjkNhr-Vwvbe8-Dh7xqsxQ&sz=w300">
           <div class="mini-info"><div class="mini-name">薩摩本柘</div><div class="mini-price">3,630円</div></div>
         </label>
-        <label class="single-mini-card" id="miniCard-single15-黒水牛">
-          <input type="checkbox" id="miniChk-single15-黒水牛" onchange="selectSingleSizeMat('single15','黒水牛')">
+        <label class="single-mini-card" id="miniCard-single15Kuro">
+          <input type="checkbox" name="hasSingle15Kuro" id="hasSingle15Kuro" onchange="onSingleItemToggle('single15Kuro')">
           <img src="https://drive.google.com/thumbnail?id=1WUSQPrBt1ShW0EXcrKcgb7EZ4t26-VjW&sz=w300">
           <div class="mini-info"><div class="mini-name">黒水牛</div><div class="mini-price">4,070円</div></div>
         </label>
-        <label class="single-mini-card" id="miniCard-single15-チタン">
-          <input type="checkbox" id="miniChk-single15-チタン" onchange="selectSingleSizeMat('single15','チタン')">
+        <label class="single-mini-card" id="miniCard-single15Titan">
+          <input type="checkbox" name="hasSingle15Titan" id="hasSingle15Titan" onchange="onSingleItemToggle('single15Titan')">
           <img src="https://drive.google.com/thumbnail?id=1jWpkY8AdC59QmxoJCHvD7nwx3GwjH0ey&sz=w300">
           <div class="mini-info"><div class="mini-name">チタン</div><div class="mini-price">27,500円</div></div>
         </label>
       </div>
-      <input type="checkbox" name="hasSingle15" id="hasSingle15" style="display:none;">
-      <div id="single15Row" class="single-item-row" style="display:none;">
-        <input type="hidden" name="single15Material" id="single15Material" value="薩摩本柘">
-        <input type="number" name="single15Qty" id="single15Qty" value="1" min="1" onchange="updatePrice()"> 本
-        <div class="form-group" style="width:100%; margin-top:8px;"><label>印字内容（彫刻するお名前）</label><textarea name="single15Text" placeholder="例：山田太郎　※複数本ご注文の場合は1行ずつご記入ください"></textarea></div>
+      <div id="single15TsugeRow" class="single-item-row" style="display:none;">
+        <span>薩摩本柘</span>
+        <input type="number" name="single15TsugeQty" id="single15TsugeQty" value="1" min="1" onchange="updatePrice()"> 本
+        <div class="form-group" style="width:100%; margin-top:8px;"><label>印字内容（彫刻するお名前）</label><textarea name="single15TsugeText" placeholder="例：山田太郎　※複数本ご注文の場合は1行ずつご記入ください"></textarea></div>
+      </div>
+      <div id="single15KuroRow" class="single-item-row" style="display:none;">
+        <span>黒水牛</span>
+        <input type="number" name="single15KuroQty" id="single15KuroQty" value="1" min="1" onchange="updatePrice()"> 本
+        <div class="form-group" style="width:100%; margin-top:8px;"><label>印字内容（彫刻するお名前）</label><textarea name="single15KuroText" placeholder="例：山田太郎　※複数本ご注文の場合は1行ずつご記入ください"></textarea></div>
+      </div>
+      <div id="single15TitanRow" class="single-item-row" style="display:none;">
+        <span>チタン</span>
+        <input type="number" name="single15TitanQty" id="single15TitanQty" value="1" min="1" onchange="updatePrice()"> 本
+        <div class="form-group" style="width:100%; margin-top:8px;"><label>印字内容（彫刻するお名前）</label><textarea name="single15TitanText" placeholder="例：山田太郎　※複数本ご注文の場合は1行ずつご記入ください"></textarea></div>
       </div>
     </div>
 
     <div class="form-group">
       <label class="size-group-label">18ミリ天丸鞘付き</label>
       <div class="single-mini-row">
-        <label class="single-mini-card" id="miniCard-single18-薩摩本柘">
-          <input type="checkbox" id="miniChk-single18-薩摩本柘" onchange="selectSingleSizeMat('single18','薩摩本柘')">
+        <label class="single-mini-card" id="miniCard-single18Tsuge">
+          <input type="checkbox" name="hasSingle18Tsuge" id="hasSingle18Tsuge" onchange="onSingleItemToggle('single18Tsuge')">
           <img src="https://drive.google.com/thumbnail?id=1jLuP3W4Y6vNmGKX1RgZgH-3vobMn2l2a&sz=w300">
           <div class="mini-info"><div class="mini-name">薩摩本柘</div><div class="mini-price">6,270円</div></div>
         </label>
-        <label class="single-mini-card" id="miniCard-single18-黒水牛">
-          <input type="checkbox" id="miniChk-single18-黒水牛" onchange="selectSingleSizeMat('single18','黒水牛')">
+        <label class="single-mini-card" id="miniCard-single18Kuro">
+          <input type="checkbox" name="hasSingle18Kuro" id="hasSingle18Kuro" onchange="onSingleItemToggle('single18Kuro')">
           <img src="https://drive.google.com/thumbnail?id=1H8hFngdPevGh8g-js3IwfyekMmfifTqU&sz=w300">
           <div class="mini-info"><div class="mini-name">黒水牛</div><div class="mini-price">11,330円</div></div>
         </label>
-        <label class="single-mini-card" id="miniCard-single18-チタン">
-          <input type="checkbox" id="miniChk-single18-チタン" onchange="selectSingleSizeMat('single18','チタン')">
+        <label class="single-mini-card" id="miniCard-single18Titan">
+          <input type="checkbox" name="hasSingle18Titan" id="hasSingle18Titan" onchange="onSingleItemToggle('single18Titan')">
           <img src="https://drive.google.com/thumbnail?id=1wsYH5w_pNMPqMIWn71YOK0-pt2PtsCbE&sz=w300">
           <div class="mini-info"><div class="mini-name">チタン</div><div class="mini-price">33,000円</div></div>
         </label>
       </div>
-      <input type="checkbox" name="hasSingle18" id="hasSingle18" style="display:none;">
-      <div id="single18Row" class="single-item-row" style="display:none;">
-        <input type="hidden" name="single18Material" id="single18Material" value="薩摩本柘">
-        <input type="number" name="single18Qty" id="single18Qty" value="1" min="1" onchange="updatePrice()"> 本
-        <div class="form-group" style="width:100%; margin-top:8px;"><label>印字内容（彫刻するお名前）</label><textarea name="single18Text" placeholder="例：山田太郎　※複数本ご注文の場合は1行ずつご記入ください"></textarea></div>
+      <div id="single18TsugeRow" class="single-item-row" style="display:none;">
+        <span>薩摩本柘</span>
+        <input type="number" name="single18TsugeQty" id="single18TsugeQty" value="1" min="1" onchange="updatePrice()"> 本
+        <div class="form-group" style="width:100%; margin-top:8px;"><label>印字内容（彫刻するお名前）</label><textarea name="single18TsugeText" placeholder="例：山田太郎　※複数本ご注文の場合は1行ずつご記入ください"></textarea></div>
+      </div>
+      <div id="single18KuroRow" class="single-item-row" style="display:none;">
+        <span>黒水牛</span>
+        <input type="number" name="single18KuroQty" id="single18KuroQty" value="1" min="1" onchange="updatePrice()"> 本
+        <div class="form-group" style="width:100%; margin-top:8px;"><label>印字内容（彫刻するお名前）</label><textarea name="single18KuroText" placeholder="例：山田太郎　※複数本ご注文の場合は1行ずつご記入ください"></textarea></div>
+      </div>
+      <div id="single18TitanRow" class="single-item-row" style="display:none;">
+        <span>チタン</span>
+        <input type="number" name="single18TitanQty" id="single18TitanQty" value="1" min="1" onchange="updatePrice()"> 本
+        <div class="form-group" style="width:100%; margin-top:8px;"><label>印字内容（彫刻するお名前）</label><textarea name="single18TitanText" placeholder="例：山田太郎　※複数本ご注文の場合は1行ずつご記入ください"></textarea></div>
       </div>
     </div>
 
     <div class="form-group">
       <label class="size-group-label">21ミリ角天</label>
       <div class="single-mini-row">
-        <label class="single-mini-card" id="miniCard-single21-薩摩本柘">
-          <input type="checkbox" id="miniChk-single21-薩摩本柘" onchange="selectSingleSizeMat('single21','薩摩本柘')">
+        <label class="single-mini-card" id="miniCard-single21Tsuge">
+          <input type="checkbox" name="hasSingle21Tsuge" id="hasSingle21Tsuge" onchange="onSingleItemToggle('single21Tsuge')">
           <img src="https://drive.google.com/thumbnail?id=1CSir5UDbe1ptisNJWp-qtIYua7BV6cyh&sz=w300">
           <div class="mini-info"><div class="mini-name">薩摩本柘</div><div class="mini-price">5,000円</div></div>
         </label>
-        <label class="single-mini-card" id="miniCard-single21-黒水牛">
-          <input type="checkbox" id="miniChk-single21-黒水牛" onchange="selectSingleSizeMat('single21','黒水牛')">
+        <label class="single-mini-card" id="miniCard-single21Kuro">
+          <input type="checkbox" name="hasSingle21Kuro" id="hasSingle21Kuro" onchange="onSingleItemToggle('single21Kuro')">
           <img src="https://drive.google.com/thumbnail?id=1iSAKITJP_aHcxgXDud-3iVHP35RnmchR&sz=w300">
           <div class="mini-info"><div class="mini-name">黒水牛</div><div class="mini-price">13,000円</div></div>
         </label>
-        <label class="single-mini-card" id="miniCard-single21-チタン">
-          <input type="checkbox" id="miniChk-single21-チタン" onchange="selectSingleSizeMat('single21','チタン')">
+        <label class="single-mini-card" id="miniCard-single21Titan">
+          <input type="checkbox" name="hasSingle21Titan" id="hasSingle21Titan" onchange="onSingleItemToggle('single21Titan')">
           <img src="https://drive.google.com/thumbnail?id=16qZVFNc08JVWVm1drRr7_NwmY0yTUxq0&sz=w300">
           <div class="mini-info"><div class="mini-name">チタン</div><div class="mini-price">49,500円</div></div>
         </label>
       </div>
-      <input type="checkbox" name="hasSingle21" id="hasSingle21" style="display:none;">
-      <div id="single21Row" class="single-item-row" style="display:none;">
-        <input type="hidden" name="single21Material" id="single21Material" value="薩摩本柘">
-        <input type="number" name="single21Qty" id="single21Qty" value="1" min="1" onchange="updatePrice()"> 本
-        <div class="form-group" style="width:100%; margin-top:8px;"><label>印字内容（彫刻するお名前）</label><textarea name="single21Text" placeholder="例：山田太郎　※複数本ご注文の場合は1行ずつご記入ください"></textarea></div>
+      <div id="single21TsugeRow" class="single-item-row" style="display:none;">
+        <span>薩摩本柘</span>
+        <input type="number" name="single21TsugeQty" id="single21TsugeQty" value="1" min="1" onchange="updatePrice()"> 本
+        <div class="form-group" style="width:100%; margin-top:8px;"><label>印字内容（彫刻するお名前）</label><textarea name="single21TsugeText" placeholder="例：山田太郎　※複数本ご注文の場合は1行ずつご記入ください"></textarea></div>
+      </div>
+      <div id="single21KuroRow" class="single-item-row" style="display:none;">
+        <span>黒水牛</span>
+        <input type="number" name="single21KuroQty" id="single21KuroQty" value="1" min="1" onchange="updatePrice()"> 本
+        <div class="form-group" style="width:100%; margin-top:8px;"><label>印字内容（彫刻するお名前）</label><textarea name="single21KuroText" placeholder="例：山田太郎　※複数本ご注文の場合は1行ずつご記入ください"></textarea></div>
+      </div>
+      <div id="single21TitanRow" class="single-item-row" style="display:none;">
+        <span>チタン</span>
+        <input type="number" name="single21TitanQty" id="single21TitanQty" value="1" min="1" onchange="updatePrice()"> 本
+        <div class="form-group" style="width:100%; margin-top:8px;"><label>印字内容（彫刻するお名前）</label><textarea name="single21TitanText" placeholder="例：山田太郎　※複数本ご注文の場合は1行ずつご記入ください"></textarea></div>
       </div>
     </div>
 
@@ -270,9 +298,14 @@
   var SHIP_FEE = 0; // 送料無料
   var OPTION_FEE = 2200;
   var SINGLE_PRICES = {
-    single15: { '薩摩本柘': 3630,  '黒水牛': 4070,  'チタン': 27500 },
-    single18: { '薩摩本柘': 6270,  '黒水牛': 11330, 'チタン': 33000 },
-    single21: { '薩摩本柘': 5000,  '黒水牛': 13000, 'チタン': 49500 }
+    single15Tsuge: 3630,  single15Kuro: 4070,  single15Titan: 27500,
+    single18Tsuge: 6270,  single18Kuro: 11330, single18Titan: 33000,
+    single21Tsuge: 5000,  single21Kuro: 13000, single21Titan: 49500
+  };
+  var SINGLE_LABELS = {
+    single15Tsuge: '15ミリ丸棒（薩摩本柘）',  single15Kuro: '15ミリ丸棒（黒水牛）',  single15Titan: '15ミリ丸棒（チタン）',
+    single18Tsuge: '18ミリ天丸鞘付き（薩摩本柘）', single18Kuro: '18ミリ天丸鞘付き（黒水牛）', single18Titan: '18ミリ天丸鞘付き（チタン）',
+    single21Tsuge: '21ミリ角天（薩摩本柘）',  single21Kuro: '21ミリ角天（黒水牛）',  single21Titan: '21ミリ角天（チタン）'
   };
   var INK_PRICE = 950;
 
@@ -288,42 +321,20 @@
     updatePrice();
   }
 
-  function selectSingleSizeMat(key, mat) {
-    var materials = Object.keys(SINGLE_PRICES[key]);
-    var thisChk = document.getElementById('miniChk-' + key + '-' + mat);
-    var mainChk = document.getElementById('has' + key.charAt(0).toUpperCase() + key.slice(1));
-
-    if (thisChk.checked) {
-      materials.forEach(function(m) {
-        if (m === mat) return;
-        var otherChk = document.getElementById('miniChk-' + key + '-' + m);
-        if (otherChk) otherChk.checked = false;
-      });
-      mainChk.checked = true;
-      document.getElementById(key + 'Material').value = mat;
-      document.getElementById(key + 'Row').style.display = 'flex';
-    } else {
-      mainChk.checked = false;
-      document.getElementById(key + 'Row').style.display = 'none';
-    }
-
-    materials.forEach(function(m) {
-      var card = document.getElementById('miniCard-' + key + '-' + m);
-      var chk = document.getElementById('miniChk-' + key + '-' + m);
-      if (card && chk) card.className = chk.checked ? 'single-mini-card selected' : 'single-mini-card';
-    });
-
+  function onSingleItemToggle(key) {
+    var chk = document.getElementById('has' + key.charAt(0).toUpperCase() + key.slice(1));
+    document.getElementById(key + 'Row').style.display = chk.checked ? 'flex' : 'none';
+    document.getElementById('miniCard-' + key).className = chk.checked ? 'single-mini-card selected' : 'single-mini-card';
     updatePrice();
   }
 
   function calcSingleItemsTotal() {
     var total = 0;
-    ['single15', 'single18', 'single21'].forEach(function(key) {
+    Object.keys(SINGLE_PRICES).forEach(function(key) {
       var checkbox = document.getElementById('has' + key.charAt(0).toUpperCase() + key.slice(1));
       if (!checkbox.checked) return;
-      var material = document.getElementById(key + 'Material').value;
       var qty = parseInt(document.getElementById(key + 'Qty').value) || 1;
-      total += SINGLE_PRICES[key][material] * qty;
+      total += SINGLE_PRICES[key] * qty;
     });
     if (document.getElementById('hasInk').checked) {
       var inkQty = parseInt(document.getElementById('inkQty').value) || 1;
@@ -422,7 +433,9 @@
     var rows = [];
     var isCorp = document.getElementById('hasCorporate').checked;
     var isFrei = document.getElementById('hasFreimate').checked;
-    var hasSingle = document.getElementById('hasSingle15').checked || document.getElementById('hasSingle18').checked || document.getElementById('hasSingle21').checked || document.getElementById('hasInk').checked;
+    var hasSingle = Object.keys(SINGLE_PRICES).some(function(key) {
+      return document.getElementById('has' + key.charAt(0).toUpperCase() + key.slice(1)).checked;
+    }) || document.getElementById('hasInk').checked;
     var area = document.getElementById('breakdownList');
 
     if (!isCorp && !isFrei && !hasSingle) {
@@ -442,13 +455,11 @@
       rows.push({ label: 'フリーメイト × ' + freiQty + '枚', price: freiQty * FREI_PRICE });
     }
 
-    var singleLabels = { single15: '15ミリ丸棒', single18: '18ミリ天丸鞘付き', single21: '21ミリ角天' };
-    ['single15', 'single18', 'single21'].forEach(function(key) {
+    Object.keys(SINGLE_PRICES).forEach(function(key) {
       var checkbox = document.getElementById('has' + key.charAt(0).toUpperCase() + key.slice(1));
       if (!checkbox.checked) return;
-      var material = document.getElementById(key + 'Material').value;
       var qty = parseInt(document.getElementById(key + 'Qty').value) || 1;
-      rows.push({ label: singleLabels[key] + '（' + material + '）× ' + qty, price: SINGLE_PRICES[key][material] * qty });
+      rows.push({ label: SINGLE_LABELS[key] + ' × ' + qty, price: SINGLE_PRICES[key] * qty });
     });
 
     if (document.getElementById('hasInk').checked) {
