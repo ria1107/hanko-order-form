@@ -101,16 +101,16 @@ function recordOrderToNotion_(formData, lineItems, orderDate) {
 // 価格設定（税込・特急発送分2,200円を含んだ価格）
 const PRICE_CORP_TSUGE_NORMAL = 11000;
 const PRICE_CORP_KURO  = 24200;
+const PRICE_CORP_TITAN = 105050;
 const FREIMATE_UNIT_PRICE = 1320;
 const SHIPPING_FEE = 770;
 const OPTION_DIGITAL_FEE = 2200;
 
 // 単品注文（1本から購入可）の価格表（税込）
 const SINGLE_ITEMS_CONFIG = [
-  { checkboxField: 'hasSingle15', materialField: 'single15Material', qtyField: 'single15Qty', textField: 'single15Text', label: '15ミリ丸棒',        prices: { '薩摩本柘': 3630,  '黒水牛': 4070 } },
-  { checkboxField: 'hasSingle18', materialField: 'single18Material', qtyField: 'single18Qty', textField: 'single18Text', label: '18ミリ天丸鞘付き', prices: { '薩摩本柘': 6270,  '黒水牛': 11330 } },
-  { checkboxField: 'hasSingle21', materialField: 'single21Material', qtyField: 'single21Qty', textField: 'single21Text', label: '21ミリ角天',        prices: { '薩摩本柘': 5000,  '黒水牛': 13000 } },
-  { checkboxField: 'hasSingleTi18', materialField: 'singleTi18Material', qtyField: 'singleTi18Qty', textField: 'singleTi18Text', label: '18ミリ丸棒（チタン）', prices: { 'チタン': 88000 } },
+  { checkboxField: 'hasSingle15', materialField: 'single15Material', qtyField: 'single15Qty', textField: 'single15Text', label: '15ミリ丸棒',        prices: { '薩摩本柘': 3630,  '黒水牛': 4070,  'チタン': 27500 } },
+  { checkboxField: 'hasSingle18', materialField: 'single18Material', qtyField: 'single18Qty', textField: 'single18Text', label: '18ミリ天丸鞘付き', prices: { '薩摩本柘': 6270,  '黒水牛': 11330, 'チタン': 33000 } },
+  { checkboxField: 'hasSingle21', materialField: 'single21Material', qtyField: 'single21Qty', textField: 'single21Text', label: '21ミリ角天',        prices: { '薩摩本柘': 5000,  '黒水牛': 13000, 'チタン': 49500 } },
 ];
 const PRICE_INK_BUNKA30 = 950; // 文化朱肉30号
 const DELIVERY_TYPE = "14時までのご注文で翌営業日発送";
@@ -215,7 +215,7 @@ function processOrderForm(formData) {
     corpMaterial = formData.corpMaterial;
     corpFont = formData.corpFont || "未選択"; // フォームから書体を取得
     innerTitle = (formData.corpText1_inner === "その他") ? formData.corpText1_inner_other : formData.corpText1_inner;
-    var corpPrice = (corpMaterial === '黒水牛') ? PRICE_CORP_KURO : PRICE_CORP_TSUGE_NORMAL;
+    var corpPrice = (corpMaterial === '黒水牛') ? PRICE_CORP_KURO : (corpMaterial === 'チタン') ? PRICE_CORP_TITAN : PRICE_CORP_TSUGE_NORMAL;
     total += corpPrice;
     lineItems.push(_sqLineItem('法人3本セット（' + corpMaterial + '）', 1, corpPrice));
     if (isDigital) { total += OPTION_DIGITAL_FEE; lineItems.push(_sqLineItem('角印電子データ化オプション', 1, OPTION_DIGITAL_FEE)); }

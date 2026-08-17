@@ -48,11 +48,13 @@
     .breakdown-row:last-child { border-bottom: none; }
     .breakdown-empty { color: #999; font-size: 0.9em; text-align: center; padding: 6px 0; }
     .size-group-label { display: block; font-weight: bold; margin-bottom: 6px; font-size: 0.9em; }
-    .single-mini-row { display: flex; gap: 10px; }
-    .single-mini-card { flex: 1; display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; border-radius: 8px; padding: 8px; cursor: pointer; transition: 0.2s; background: #fff; min-width: 0; }
+    .single-mini-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .single-mini-card { flex: 1 1 140px; display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; border-radius: 8px; padding: 8px; cursor: pointer; transition: 0.2s; background: #fff; min-width: 0; }
     .single-mini-card.selected { border-color: #d32f2f; background: #fff9f9; box-shadow: 0 2px 8px rgba(211,47,47,0.15); }
     .single-mini-card input[type="checkbox"] { transform: scale(1.3); cursor: pointer; flex-shrink: 0; }
     .single-mini-card img { width: 64px; height: 64px; object-fit: contain; background: #f4f7f6; border-radius: 4px; flex-shrink: 0; }
+    .mini-photo-placeholder { width: 64px; height: 64px; border-radius: 4px; background: #ddd; color: #888; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.8em; flex-shrink: 0; }
+    .price-card-placeholder { width: 100%; height: 160px; background: #ddd; color: #888; display: flex; align-items: center; justify-content: center; font-weight: bold; border-bottom: 1px solid #eee; }
     .single-mini-card .mini-info { min-width: 0; }
     .single-mini-card .mini-name { font-weight: bold; font-size: 0.85em; color: #2c3e50; }
     .single-mini-card .mini-price { color: #d32f2f; font-weight: bold; font-size: 0.9em; margin-top: 2px; }
@@ -76,6 +78,13 @@
       <img src="https://drive.google.com/thumbnail?id=1NczEmXeR_rhuNBs4m9YWJunz_IIGmpo4&sz=w646">
       <div class="card-checkbox-area"><input type="checkbox" id="check-kuro"> <span class="name">黒水牛 3本セット</span></div>
       <div class="price">22,000円(税込)</div>
+      <div class="shipping-label">3営業日以内に発送【送料無料】</div>
+    </div>
+
+    <div class="price-card-item" id="card-titan" onclick="selectMaterialFromCard('チタン')">
+      <div class="price-card-placeholder">チタン</div>
+      <div class="card-checkbox-area"><input type="checkbox" id="check-titan"> <span class="name">チタン 3本セット</span></div>
+      <div class="price">102,850円(税込)</div>
       <div class="shipping-label">3営業日以内に発送【送料無料】</div>
     </div>
   </div>
@@ -102,6 +111,7 @@
       <select name="corpMaterial" id="corpMaterial" onchange="syncCards();">
         <option value="薩摩本柘" id="tsugeOptionPrice">薩摩本柘 (8,800円(税込))</option>
         <option value="黒水牛">黒水牛 (22,000円(税込))</option>
+        <option value="チタン">チタン (102,850円(税込))</option>
       </select>
     </div>
     <div class="form-group"><label>書体</label><img src="https://drive.google.com/thumbnail?id=1cZHV6OC6qciCKkYR92SSn1RRxM-Dw_M6&sz=w1400" class="font-image"><select name="corpFont"><option>篆書体（推奨）</option><option>印相体</option><option>古印体</option></select></div>
@@ -143,6 +153,11 @@
           <img src="https://drive.google.com/thumbnail?id=1WUSQPrBt1ShW0EXcrKcgb7EZ4t26-VjW&sz=w300">
           <div class="mini-info"><div class="mini-name">黒水牛</div><div class="mini-price">4,070円</div></div>
         </label>
+        <label class="single-mini-card" id="miniCard-single15-チタン">
+          <input type="checkbox" id="miniChk-single15-チタン" onchange="selectSingleSizeMat('single15','チタン')">
+          <div class="mini-photo-placeholder">チタン</div>
+          <div class="mini-info"><div class="mini-name">チタン</div><div class="mini-price">27,500円</div></div>
+        </label>
       </div>
       <input type="checkbox" name="hasSingle15" id="hasSingle15" style="display:none;">
       <div id="single15Row" class="single-item-row" style="display:none;">
@@ -164,6 +179,11 @@
           <input type="checkbox" id="miniChk-single18-黒水牛" onchange="selectSingleSizeMat('single18','黒水牛')">
           <img src="https://drive.google.com/thumbnail?id=1H8hFngdPevGh8g-js3IwfyekMmfifTqU&sz=w300">
           <div class="mini-info"><div class="mini-name">黒水牛</div><div class="mini-price">11,330円</div></div>
+        </label>
+        <label class="single-mini-card" id="miniCard-single18-チタン">
+          <input type="checkbox" id="miniChk-single18-チタン" onchange="selectSingleSizeMat('single18','チタン')">
+          <div class="mini-photo-placeholder">チタン</div>
+          <div class="mini-info"><div class="mini-name">チタン</div><div class="mini-price">33,000円</div></div>
         </label>
       </div>
       <input type="checkbox" name="hasSingle18" id="hasSingle18" style="display:none;">
@@ -187,29 +207,17 @@
           <img src="https://drive.google.com/thumbnail?id=1iSAKITJP_aHcxgXDud-3iVHP35RnmchR&sz=w300">
           <div class="mini-info"><div class="mini-name">黒水牛</div><div class="mini-price">13,000円</div></div>
         </label>
+        <label class="single-mini-card" id="miniCard-single21-チタン">
+          <input type="checkbox" id="miniChk-single21-チタン" onchange="selectSingleSizeMat('single21','チタン')">
+          <div class="mini-photo-placeholder">チタン</div>
+          <div class="mini-info"><div class="mini-name">チタン</div><div class="mini-price">49,500円</div></div>
+        </label>
       </div>
       <input type="checkbox" name="hasSingle21" id="hasSingle21" style="display:none;">
       <div id="single21Row" class="single-item-row" style="display:none;">
         <input type="hidden" name="single21Material" id="single21Material" value="薩摩本柘">
         <input type="number" name="single21Qty" id="single21Qty" value="1" min="1" onchange="updatePrice()"> 本
         <div class="form-group" style="width:100%; margin-top:8px;"><label>印字内容（彫刻するお名前）</label><textarea name="single21Text" placeholder="例：山田太郎　※複数本ご注文の場合は1行ずつご記入ください"></textarea></div>
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label class="size-group-label">18ミリ丸棒（チタン）</label>
-      <div class="single-mini-row">
-        <label class="single-mini-card" id="miniCard-singleTi18-チタン">
-          <input type="checkbox" id="miniChk-singleTi18-チタン" onchange="selectSingleOnlyMat('singleTi18','チタン')">
-          <img src="https://drive.google.com/thumbnail?id=1wQLOCGE7yje-fwSMN-t9N_9ebwun3sKA&sz=w300">
-          <div class="mini-info"><div class="mini-name">チタン</div><div class="mini-price">88,000円</div></div>
-        </label>
-      </div>
-      <input type="checkbox" name="hasSingleTi18" id="hasSingleTi18" style="display:none;">
-      <div id="singleTi18Row" class="single-item-row" style="display:none;">
-        <input type="hidden" name="singleTi18Material" id="singleTi18Material" value="チタン">
-        <input type="number" name="singleTi18Qty" id="singleTi18Qty" value="1" min="1" onchange="updatePrice()"> 本
-        <div class="form-group" style="width:100%; margin-top:8px;"><label>印字内容（彫刻するお名前）</label><textarea name="singleTi18Text" placeholder="例：山田太郎　※複数本ご注文の場合は1行ずつご記入ください"></textarea></div>
       </div>
     </div>
 
@@ -258,16 +266,22 @@
   var isSpecialFlag = false;
   var TSUGE_PRICE = 8800;
   var KURO_PRICE = 22000;
+  var TITAN_PRICE = 102850;
   var FREI_PRICE = 1320;
   var SHIP_FEE = 0; // 送料無料
   var OPTION_FEE = 2200;
   var SINGLE_PRICES = {
-    single15: { '薩摩本柘': 3630,  '黒水牛': 4070 },
-    single18: { '薩摩本柘': 6270,  '黒水牛': 11330 },
-    single21: { '薩摩本柘': 5000,  '黒水牛': 13000 },
-    singleTi18: { 'チタン': 88000 }
+    single15: { '薩摩本柘': 3630,  '黒水牛': 4070,  'チタン': 27500 },
+    single18: { '薩摩本柘': 6270,  '黒水牛': 11330, 'チタン': 33000 },
+    single21: { '薩摩本柘': 5000,  '黒水牛': 13000, 'チタン': 49500 }
   };
   var INK_PRICE = 950;
+
+  function corpPriceFor(mat) {
+    if (mat === '黒水牛') return KURO_PRICE;
+    if (mat === 'チタン') return TITAN_PRICE;
+    return TSUGE_PRICE;
+  }
 
   function toggleSingleRow(checkboxId, rowId) {
     var checked = document.getElementById(checkboxId).checked;
@@ -276,13 +290,16 @@
   }
 
   function selectSingleSizeMat(key, mat) {
-    var otherMat = (mat === '薩摩本柘') ? '黒水牛' : '薩摩本柘';
+    var materials = Object.keys(SINGLE_PRICES[key]);
     var thisChk = document.getElementById('miniChk-' + key + '-' + mat);
-    var otherChk = document.getElementById('miniChk-' + key + '-' + otherMat);
     var mainChk = document.getElementById('has' + key.charAt(0).toUpperCase() + key.slice(1));
 
     if (thisChk.checked) {
-      otherChk.checked = false;
+      materials.forEach(function(m) {
+        if (m === mat) return;
+        var otherChk = document.getElementById('miniChk-' + key + '-' + m);
+        if (otherChk) otherChk.checked = false;
+      });
       mainChk.checked = true;
       document.getElementById(key + 'Material').value = mat;
       document.getElementById(key + 'Row').style.display = 'flex';
@@ -291,32 +308,18 @@
       document.getElementById(key + 'Row').style.display = 'none';
     }
 
-    document.getElementById('miniCard-' + key + '-薩摩本柘').className = document.getElementById('miniChk-' + key + '-薩摩本柘').checked ? 'single-mini-card selected' : 'single-mini-card';
-    document.getElementById('miniCard-' + key + '-黒水牛').className = document.getElementById('miniChk-' + key + '-黒水牛').checked ? 'single-mini-card selected' : 'single-mini-card';
-
-    updatePrice();
-  }
-
-  function selectSingleOnlyMat(key, mat) {
-    var chk = document.getElementById('miniChk-' + key + '-' + mat);
-    var mainChk = document.getElementById('has' + key.charAt(0).toUpperCase() + key.slice(1));
-
-    if (chk.checked) {
-      mainChk.checked = true;
-      document.getElementById(key + 'Row').style.display = 'flex';
-    } else {
-      mainChk.checked = false;
-      document.getElementById(key + 'Row').style.display = 'none';
-    }
-
-    document.getElementById('miniCard-' + key + '-' + mat).className = chk.checked ? 'single-mini-card selected' : 'single-mini-card';
+    materials.forEach(function(m) {
+      var card = document.getElementById('miniCard-' + key + '-' + m);
+      var chk = document.getElementById('miniChk-' + key + '-' + m);
+      if (card && chk) card.className = chk.checked ? 'single-mini-card selected' : 'single-mini-card';
+    });
 
     updatePrice();
   }
 
   function calcSingleItemsTotal() {
     var total = 0;
-    ['single15', 'single18', 'single21', 'singleTi18'].forEach(function(key) {
+    ['single15', 'single18', 'single21'].forEach(function(key) {
       var checkbox = document.getElementById('has' + key.charAt(0).toUpperCase() + key.slice(1));
       if (!checkbox.checked) return;
       var material = document.getElementById(key + 'Material').value;
@@ -359,9 +362,11 @@
     var mat = document.getElementById('corpMaterial').value;
     document.getElementById('card-tsuge').className = (isCorp && mat === '薩摩本柘') ? 'price-card-item selected' : 'price-card-item';
     document.getElementById('card-kuro').className = (isCorp && mat === '黒水牛') ? 'price-card-item selected' : 'price-card-item';
+    document.getElementById('card-titan').className = (isCorp && mat === 'チタン') ? 'price-card-item selected' : 'price-card-item';
     document.getElementById('card-frei').className = isFrei ? 'price-card-item selected' : 'price-card-item';
     document.getElementById('check-tsuge').checked = (isCorp && mat === '薩摩本柘');
     document.getElementById('check-kuro').checked = (isCorp && mat === '黒水牛');
+    document.getElementById('check-titan').checked = (isCorp && mat === 'チタン');
     document.getElementById('check-frei').checked = isFrei;
     document.getElementById('corpFields').style.display = isCorp ? 'block' : 'none';
     document.getElementById('freiFields').style.display = isFrei ? 'block' : 'none';
@@ -400,7 +405,7 @@
     var isFrei = document.getElementById('hasFreimate').checked;
 
     if (isCorp) {
-      total += (document.getElementById('corpMaterial').value === '黒水牛') ? KURO_PRICE : TSUGE_PRICE;
+      total += corpPriceFor(document.getElementById('corpMaterial').value);
       if (document.getElementById('isDigital').checked) total += OPTION_FEE;
     }
 
@@ -418,7 +423,7 @@
     var rows = [];
     var isCorp = document.getElementById('hasCorporate').checked;
     var isFrei = document.getElementById('hasFreimate').checked;
-    var hasSingle = document.getElementById('hasSingle15').checked || document.getElementById('hasSingle18').checked || document.getElementById('hasSingle21').checked || document.getElementById('hasSingleTi18').checked || document.getElementById('hasInk').checked;
+    var hasSingle = document.getElementById('hasSingle15').checked || document.getElementById('hasSingle18').checked || document.getElementById('hasSingle21').checked || document.getElementById('hasInk').checked;
     var area = document.getElementById('breakdownList');
 
     if (!isCorp && !isFrei && !hasSingle) {
@@ -428,7 +433,7 @@
 
     if (isCorp) {
       var mat = document.getElementById('corpMaterial').value;
-      var base = (mat === '黒水牛') ? KURO_PRICE : TSUGE_PRICE;
+      var base = corpPriceFor(mat);
       rows.push({ label: '法人3本セット（' + mat + '）', price: base });
       if (document.getElementById('isDigital').checked) rows.push({ label: '　角印電子データ化オプション', price: OPTION_FEE });
     }
@@ -438,8 +443,8 @@
       rows.push({ label: 'フリーメイト × ' + freiQty + '枚', price: freiQty * FREI_PRICE });
     }
 
-    var singleLabels = { single15: '15ミリ丸棒', single18: '18ミリ天丸鞘付き', single21: '21ミリ角天', singleTi18: '18ミリ丸棒（チタン）' };
-    ['single15', 'single18', 'single21', 'singleTi18'].forEach(function(key) {
+    var singleLabels = { single15: '15ミリ丸棒', single18: '18ミリ天丸鞘付き', single21: '21ミリ角天' };
+    ['single15', 'single18', 'single21'].forEach(function(key) {
       var checkbox = document.getElementById('has' + key.charAt(0).toUpperCase() + key.slice(1));
       if (!checkbox.checked) return;
       var material = document.getElementById(key + 'Material').value;
