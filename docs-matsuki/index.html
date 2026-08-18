@@ -5,13 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>印鑑注文フォーム（翌営業日発送）</title>
   <style>
-    body { font-family: sans-serif; color: #333; max-width: 1060px; margin: 0 auto; padding: 20px; background: #f4f7f6; }
-    .section, .price-card-bottom, #breakdownSection { max-width: 700px; margin-left: auto; margin-right: auto; }
-    #singleItemsSection { max-width: none; }
+    body { font-family: sans-serif; color: #333; max-width: 700px; margin: 0 auto; padding: 20px; background: #f4f7f6; }
     h1 { text-align: center; color: #2c3e50; margin-bottom: 20px; font-size: 2.2em; border-bottom: 3px solid #3498db; display: inline-block; width: 100%; padding-bottom: 10px; }
-    .price-guide-upper { display: flex; gap: 15px; margin-bottom: 15px; justify-content: center; }
-    .price-guide-lower { display: flex; justify-content: center; margin-bottom: 25px; }
-    .price-card-item { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-align: center; padding-bottom: 12px; border: 2px solid #ddd; cursor: pointer; transition: 0.3s; width: 323px; }
+    .price-guide-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+    .price-card-item { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-align: center; padding-bottom: 12px; border: 2px solid #ddd; cursor: pointer; transition: 0.3s; }
     .price-card-item.selected { border-color: #d32f2f; background-color: #fff9f9; box-shadow: 0 4px 12px rgba(211,47,47,0.2); }
     .price-card-item img { width: 100%; height: 160px; object-fit: cover; border-bottom: 1px solid #eee; display: block; }
     .card-checkbox-area { padding: 10px 0; display: flex; align-items: center; justify-content: center; gap: 8px; }
@@ -42,7 +39,6 @@
     .single-item-row { display: flex; gap: 10px; align-items: center; margin: 8px 0 0 25px; flex-wrap: wrap; }
     .single-item-row select { width: auto; flex: 1; }
     .single-item-row input[type="number"] { width: 70px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
-    .card-group-label { text-align: center; font-weight: bold; color: #2c3e50; font-size: 0.95em; margin-bottom: 8px; }
     .required-badge { background: #d32f2f; color: #fff; font-size: 0.7em; padding: 2px 6px; border-radius: 3px; margin-left: 4px; font-weight: normal; vertical-align: middle; }
     .option-hint { font-size: 0.75em; color: #999; margin-left: 25px; margin-top: 2px; }
     .payment-note { text-align: center; font-size: 0.8em; color: #bdc3c7; margin-top: 10px; }
@@ -58,15 +54,14 @@
     .single-mini-card .mini-info { min-width: 0; }
     .single-mini-card .mini-name { font-weight: bold; font-size: 0.85em; color: #2c3e50; }
     .single-mini-card .mini-price { color: #d32f2f; font-weight: bold; font-size: 0.9em; margin-top: 2px; }
-    @media (max-width: 680px) { .price-guide-upper { flex-direction: column; align-items: center; } .price-guide-lower { flex-direction: column; align-items: center; } .price-card-item { width: 100%; max-width: 323px; margin-bottom: 10px; } .zip-container { flex-direction: column; } .zip-input { width: 100% !important; } .zip-btn { padding: 12px; } .price-card-bottom { position: static; margin-top: 20px; } }
+    @media (max-width: 680px) { .price-guide-grid { grid-template-columns: 1fr; } .zip-container { flex-direction: column; } .zip-input { width: 100% !important; } .zip-btn { padding: 12px; } .price-card-bottom { position: static; margin-top: 20px; } }
   </style>
 </head>
 <body>
 
   <h1>印鑑注文フォーム</h1>
 
-  <div class="card-group-label">法人3本セット</div>
-  <div class="price-guide-upper">
+  <div class="price-guide-grid">
     <div class="price-card-item" id="card-tsuge" onclick="selectMaterialFromCard('薩摩本柘')">
       <img src="https://drive.google.com/thumbnail?id=13zFX2vV3De3_YwTUWXrxu14tupYXaJnR&sz=w646">
       <div class="card-checkbox-area"><input type="checkbox" id="check-tsuge"> <span class="name">薩摩本柘 3本セット</span></div>
@@ -81,20 +76,17 @@
       <div class="shipping-label">14時までのご注文で翌営業日発送</div>
     </div>
 
-    <div class="price-card-item" id="card-titan" onclick="selectMaterialFromCard('ブラストチタン')">
-      <img src="https://drive.google.com/thumbnail?id=1slYAXqbrB_ofLMwAXTY0c2D2n-gNVsO1&sz=w646">
-      <div class="card-checkbox-area"><input type="checkbox" id="check-titan"> <span class="name">ブラストチタン 3本セット</span></div>
-      <div class="price">105,050円(税込)</div>
-      <div class="shipping-label">14時までのご注文で翌営業日発送</div>
-    </div>
-  </div>
-
-  <div class="card-group-label">ゴム印</div>
-  <div class="price-guide-lower">
     <div class="price-card-item" id="card-frei" onclick="selectFreimateFromCard()">
       <img src="https://drive.google.com/thumbnail?id=1fBz-aI7eWxfDMSwgSH8O42UwRti9-Tam&sz=w646">
       <div class="card-checkbox-area"><input type="checkbox" id="check-frei"> <span class="name">フリーメイト (組み合わせゴム印)</span></div>
       <div class="price">1枚 1,320円(税込)</div>
+      <div class="shipping-label">14時までのご注文で翌営業日発送</div>
+    </div>
+
+    <div class="price-card-item" id="card-titan" onclick="selectMaterialFromCard('ブラストチタン')">
+      <img src="https://drive.google.com/thumbnail?id=1slYAXqbrB_ofLMwAXTY0c2D2n-gNVsO1&sz=w646">
+      <div class="card-checkbox-area"><input type="checkbox" id="check-titan"> <span class="name">ブラストチタン 3本セット</span></div>
+      <div class="price">105,050円(税込)</div>
       <div class="shipping-label">14時までのご注文で翌営業日発送</div>
     </div>
   </div>
