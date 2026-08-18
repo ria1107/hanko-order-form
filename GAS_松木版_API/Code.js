@@ -111,13 +111,13 @@ const OPTION_DIGITAL_FEE = 2200;
 const SINGLE_ITEMS_CONFIG = [
   { checkboxField: 'hasSingle15Tsuge', qtyField: 'single15TsugeQty', textField: 'single15TsugeText', label: '15ミリ丸棒（薩摩本柘）',        price: 3630 },
   { checkboxField: 'hasSingle15Kuro',  qtyField: 'single15KuroQty',  textField: 'single15KuroText',  label: '15ミリ丸棒（黒水牛）',        price: 4070 },
-  { checkboxField: 'hasSingle15Titan', qtyField: 'single15TitanQty', textField: 'single15TitanText', label: '15ミリ丸棒（チタン）',        price: 27500 },
+  { checkboxField: 'hasSingle15Titan', qtyField: 'single15TitanQty', textField: 'single15TitanText', label: '15ミリ丸棒（ブラストチタン）',        price: 27500 },
   { checkboxField: 'hasSingle18Tsuge', qtyField: 'single18TsugeQty', textField: 'single18TsugeText', label: '18ミリ天丸鞘付き（薩摩本柘）', price: 6270 },
   { checkboxField: 'hasSingle18Kuro',  qtyField: 'single18KuroQty',  textField: 'single18KuroText',  label: '18ミリ天丸鞘付き（黒水牛）',  price: 11330 },
-  { checkboxField: 'hasSingle18Titan', qtyField: 'single18TitanQty', textField: 'single18TitanText', label: '18ミリ天丸鞘付き（チタン）',  price: 33000 },
+  { checkboxField: 'hasSingle18Titan', qtyField: 'single18TitanQty', textField: 'single18TitanText', label: '18ミリ天丸鞘付き（ブラストチタン）',  price: 33000 },
   { checkboxField: 'hasSingle21Tsuge', qtyField: 'single21TsugeQty', textField: 'single21TsugeText', label: '21ミリ角天（薩摩本柘）',        price: 5000 },
   { checkboxField: 'hasSingle21Kuro',  qtyField: 'single21KuroQty',  textField: 'single21KuroText',  label: '21ミリ角天（黒水牛）',        price: 13000 },
-  { checkboxField: 'hasSingle21Titan', qtyField: 'single21TitanQty', textField: 'single21TitanText', label: '21ミリ角天（チタン）',        price: 49500 },
+  { checkboxField: 'hasSingle21Titan', qtyField: 'single21TitanQty', textField: 'single21TitanText', label: '21ミリ角天（ブラストチタン）',        price: 49500 },
 ];
 const PRICE_INK_BUNKA30 = 950; // 文化朱肉30号
 const DELIVERY_TYPE = "14時までのご注文で翌営業日発送";
@@ -129,7 +129,7 @@ function toHalfWidth(str) {
   });
 }
 
-// フォームで選ばれた単品注文（15/18/21ミリ × 薩摩本柘/黒水牛/チタン）を集計する
+// フォームで選ばれた単品注文（15/18/21ミリ × 薩摩本柘/黒水牛/ブラストチタン）を集計する
 function _buildSingleOrderItems(formData) {
   var lines = [];
   var items = [];
@@ -221,7 +221,7 @@ function processOrderForm(formData) {
     corpMaterial = formData.corpMaterial;
     corpFont = formData.corpFont || "未選択"; // フォームから書体を取得
     innerTitle = (formData.corpText1_inner === "その他") ? formData.corpText1_inner_other : formData.corpText1_inner;
-    var corpPrice = (corpMaterial === '黒水牛') ? PRICE_CORP_KURO : (corpMaterial === 'チタン') ? PRICE_CORP_TITAN : PRICE_CORP_TSUGE_NORMAL;
+    var corpPrice = (corpMaterial === '黒水牛') ? PRICE_CORP_KURO : (corpMaterial === 'ブラストチタン') ? PRICE_CORP_TITAN : PRICE_CORP_TSUGE_NORMAL;
     total += corpPrice;
     lineItems.push(_sqLineItem('法人3本セット（' + corpMaterial + '）', 1, corpPrice));
     if (isDigital) { total += OPTION_DIGITAL_FEE; lineItems.push(_sqLineItem('角印電子データ化オプション', 1, OPTION_DIGITAL_FEE)); }
