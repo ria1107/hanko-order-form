@@ -79,6 +79,11 @@ function recordOrderToNotion_(formData, lineItems, orderDate) {
   });
   if (!projectPage || !projectPage.id) return;
 
+  // 作成直後の案件ページは、Notion側の検索インデックスが追いつかず、
+  // 直後にリレーションで参照すると空のまま登録されてしまうことがある(2026-08-27に別フォームの実機テストで確認)。
+  // 少し待ってからリレーションを含む明細行を作成することで回避する。
+  Utilities.sleep(1500);
+
   lineItems.forEach(function(item) {
     var qty = parseInt(item.quantity, 10) || 1;
     var unitPriceExcl = Math.round(item.base_price_money.amount / 1.1);
