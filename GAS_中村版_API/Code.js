@@ -125,6 +125,14 @@ const SINGLE_ITEMS_CONFIG = [
 ];
 const PRICE_INK_BUNKA30 = 950; // 文化朱肉30号
 
+// 中村様事務所の固定配送先。毎回ほぼ同じ場所に送るため、
+// フォームで「中村様事務所以外に送る」にチェックが入っていない場合はこの住所を配送先として使う。
+// 住所や電話番号が変わった場合はここだけ書き換えればよい。
+const NAKAMURA_OFFICE_ZIP = '110-0005';
+const NAKAMURA_OFFICE_ADDRESS = '東京都台東区上野三丁目16番2号天翔オフィス上野末広町1005号室';
+const NAKAMURA_OFFICE_NAME = '中村翔太郎'; // 出力時に「様」を付けて表示する
+const NAKAMURA_OFFICE_TEL = '070-9129-2138';
+
 function toHalfWidth(str) {
   if (!str) return "";
   return String(str).replace(/[０-９]/g, function(s) {
@@ -254,15 +262,33 @@ function processOrderForm(formData) {
 
   var fullAddress = formData.address_auto + formData.address_manual;
 
+  // 配送先の決定: 他の版と逆で、デフォルト(未チェック)は中村様事務所への固定住所を使う。
+  // 「中村様事務所以外に送る」にチェックが入っている場合のみ、フォームの配送先専用項目を使う。
+  var shipElsewhere = (formData.shipElsewhere === 'true' || formData.shipElsewhere === 'on');
+  var shipZip, shipAddress, shipName;
+  if (shipElsewhere) {
+    shipZip = toHalfWidth((formData.shipZip || "").trim());
+    shipAddress = toHalfWidth((formData.shipAddress || "").trim());
+    shipName = (formData.shipName || "").trim();
+  } else {
+    shipZip = NAKAMURA_OFFICE_ZIP;
+    shipAddress = NAKAMURA_OFFICE_ADDRESS;
+    shipName = NAKAMURA_OFFICE_NAME;
+  }
+
   var detailString = "材質:" + corpMaterial + " / 書体:" + corpFont + " / 社名:" + formData.corpName + " / 役職:" + innerTitle;
 
+  // ▼列の並び順は本番スプレッドシートと固定で対応しているため絶対に変更しないこと。
+  // 配送先の3項目(郵便番号・住所・お届け先氏名)は既存の列を一切動かさず、末尾に追記する。
+  // 本番シート側にもこの3列を最後尾に追加しておく必要がある(README.md参照)。
   sheet.appendRow([
     new Date(), formData.referrer, corpMaterial, detailString,
     hasFrei ? freiQty : "-", freiTexts.join(" / "),
     singleResult.lines.length > 0 ? singleResult.text : "-",
     inkQty > 0 ? inkQty : "-",
     "-", isDigital ? "○" : "-", total,
-    formData.userName, formData.email, formData.zipCode, fullAddress, formData.tel, formData.remarks
+    formData.userName, formData.email, formData.zipCode, fullAddress, formData.tel, formData.remarks,
+    shipZip, shipAddress, shipName
   ]);
 
   var paymentUrl = createSquarePaymentLink(lineItems, formData.userName);
@@ -273,7 +299,7 @@ function processOrderForm(formData) {
     console.error('Notion記録でエラー: ' + notionErr.toString());
   }
 
-  sendOrderEmails(formData, total, hasCorp, corpMaterial, innerTitle, hasFrei, freiTexts, singleResult, inkQty, isDigital, deliveryType, fullAddress, corpFont, paymentUrl);
+  sendOrderEmails(formData, total, hasCorp, corpMaterial, innerTitle, hasFrei, freiTexts, singleResult, inkQty, isDigital, deliveryType, fullAddress, corpFont, paymentUrl, shipElsewhere, shipZip, shipAddress, shipName);
   return { message: "ご注文を承りました。内容確認のメールをお送りしました。", paymentUrl: paymentUrl };
 
   } catch (e) {
@@ -282,7 +308,7 @@ function processOrderForm(formData) {
   }
 }
 
-function sendOrderEmails(data, total, hasCorp, corpMaterial, innerTitle, hasFrei, freiTexts, singleResult, inkQty, isDigital, deliveryType, fullAddress, corpFont, paymentUrl) {
+function sendOrderEmails(data, total, hasCorp, corpMaterial, innerTitle, hasFrei, freiTexts, singleResult, inkQty, isDigital, deliveryType, fullAddress, corpFont, paymentUrl, shipElsewhere, shipZip, shipAddress, shipName) {
   var subject = "【注文受付】" + data.userName + "様（合計：" + total.toLocaleString() + "円）";
   var body = data.userName + " 様\n\nご注文ありがとうございます。\n\n【合計金額】" + total.toLocaleString() + "円(税込・送料無料)\n【納期】" + deliveryType + "\n\n";
   body += paymentUrl
@@ -313,6 +339,9 @@ function sendOrderEmails(data, total, hasCorp, corpMaterial, innerTitle, hasFrei
     orderDetails += "■文化朱肉30号 × " + inkQty + "\n\n";
   }
   body += orderDetails + "【送り先】\n〒" + data.zipCode + "\n" + fullAddress + "\n" + data.userName + " 様\n電話番号：" + data.tel + "\n";
+  body += "\n【お届け先】\n" + (shipElsewhere ? "" : "（中村様事務所へお届けします）\n") +
+          "〒" + shipZip + "\n" + shipAddress + "\n" + shipName + " 様\n" +
+          (shipElsewhere ? "" : "電話番号：" + NAKAMURA_OFFICE_TEL + "\n");
   if (data.remarks) body += "\n【備考】\n" + data.remarks + "\n";
   GmailApp.sendEmail(data.email, subject, body, { from: ADMIN_EMAIL, bcc: ADMIN_EMAIL });
 
@@ -328,7 +357,9 @@ function sendOrderEmails(data, total, hasCorp, corpMaterial, innerTitle, hasFrei
                   "〒" + data.zipCode + "\n" +
                   fullAddress + "\n" +
                   data.userName + " 様\n" +
-                  "TEL: " + data.tel + "\n";
+                  "TEL: " + data.tel + "\n\n" +
+                  "*■お届け先*\n" +
+                  (shipElsewhere ? "〒" + shipZip + " " + shipAddress + "\n" + shipName + " 様\n" : "中村様事務所（〒" + shipZip + " " + shipAddress + " " + shipName + " 様 / TEL: " + NAKAMURA_OFFICE_TEL + "）\n");
 
   if (data.remarks) slackText += "\n*■備考*\n" + data.remarks + "\n";
   slackText += "\n詳細: <" + SS_URL + "|スプレッドシートを確認>";

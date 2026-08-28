@@ -41,6 +41,9 @@
     .single-item-row input[type="number"] { width: 70px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
     .required-badge { background: #d32f2f; color: #fff; font-size: 0.7em; padding: 2px 6px; border-radius: 3px; margin-left: 4px; font-weight: normal; vertical-align: middle; }
     .option-hint { font-size: 0.75em; color: #999; margin-left: 25px; margin-top: 2px; }
+    .checkbox-row { display: flex; align-items: center; gap: 8px; font-weight: bold; font-size: 0.95em; }
+    .checkbox-row input[type="checkbox"] { transform: scale(1.4); cursor: pointer; }
+    .ship-hint { font-size: 0.8em; color: #999; margin: 6px 0 14px; }
     .payment-note { text-align: center; font-size: 0.8em; color: #bdc3c7; margin-top: 10px; }
     .breakdown-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #eee; font-size: 0.9em; }
     .breakdown-row:last-child { border-bottom: none; }
@@ -263,6 +266,33 @@
     <div class="form-group"><label>備考</label><textarea name="remarks" placeholder="ご要望などございましたらご記入ください"></textarea></div>
   </div>
 
+  <div class="section">
+    <h2>配送先</h2>
+    <label class="checkbox-row">
+      <input type="checkbox" name="sameAsAbove" id="sameAsAbove" checked onchange="toggleShipFields()">
+      配送先は上記と同じ
+    </label>
+    <div class="ship-hint">チェックを外すと、別の配送先を入力できます。</div>
+
+    <div id="shipFields" style="display:none;">
+      <div class="form-group">
+        <label>配送先郵便番号 <span class="required-badge">必須</span></label>
+        <div class="zip-container">
+          <input type="text" name="shipZip" id="shipZip" class="zip-input" placeholder="1234567" maxlength="8">
+          <button type="button" class="zip-btn" onclick="handleShipZipClick()">住所を入力</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>配送先住所 <span class="required-badge">必須</span></label>
+        <input type="text" name="shipAddress" id="shipAddress" placeholder="例：東京都荒川区〇〇1-2-3 〇〇ビル101">
+      </div>
+      <div class="form-group">
+        <label>お届け先氏名 <span class="required-badge">必須</span></label>
+        <input type="text" name="shipName" id="shipName" placeholder="例：田中 太郎">
+      </div>
+    </div>
+  </div>
+
   <div class="section" id="breakdownSection">
     <h2>ご注文内容</h2>
     <div id="breakdownList"><div class="breakdown-empty">商品を選択すると内訳が表示されます</div></div>
@@ -338,6 +368,26 @@
     if (zip.length !== 7) { alert("郵便番号を7桁で入力してください。"); return; }
     fetch('https://zipcloud.ibsnet.co.jp/api/search?zipcode=' + zip).then(function(res){return res.json();}).then(function(data){
       if(data.results && data.results[0]){ document.getElementById('address_auto').value = data.results[0].address1 + data.results[0].address2 + data.results[0].address3; document.getElementById('address_manual').focus(); }
+      else { alert("該当する住所が見つかりませんでした。"); }
+    }).catch(function(err){ alert("通信エラーです。"); });
+  }
+
+  // 配送先セクションの「配送先は上記と同じ」チェックボックスの表示切り替え。
+  // チェックが外れている時だけ配送先の入力欄を表示し、必須項目にする。
+  function toggleShipFields() {
+    var same = document.getElementById('sameAsAbove').checked;
+    document.getElementById('shipFields').style.display = same ? 'none' : 'block';
+    document.getElementById('shipZip').required = !same;
+    document.getElementById('shipAddress').required = !same;
+    document.getElementById('shipName').required = !same;
+  }
+
+  // 配送先専用の郵便番号検索。handleZipClick()と同じzipcloud APIを使い、配送先住所欄に反映する。
+  function handleShipZipClick() {
+    var zip = document.getElementById('shipZip').value.replace(/\D/g, '');
+    if (zip.length !== 7) { alert("郵便番号を7桁で入力してください。"); return; }
+    fetch('https://zipcloud.ibsnet.co.jp/api/search?zipcode=' + zip).then(function(res){return res.json();}).then(function(data){
+      if(data.results && data.results[0]){ document.getElementById('shipAddress').value = data.results[0].address1 + data.results[0].address2 + data.results[0].address3; document.getElementById('shipAddress').focus(); }
       else { alert("該当する住所が見つかりませんでした。"); }
     }).catch(function(err){ alert("通信エラーです。"); });
   }
@@ -474,6 +524,8 @@
     var formData = new FormData(form);
     var obj = {};
     formData.forEach(function(value, key) { obj[key] = value; });
+    // チェックボックスは未チェック時にFormDataへ含まれないため、明示的に補完する
+    obj.sameAsAbove = document.getElementById('sameAsAbove').checked ? 'true' : 'false';
 
     fetch(API_URL, {
       method: 'POST',
@@ -502,6 +554,7 @@
     document.getElementById('referrerInput').value = referrer;
 
     syncCards();
+    toggleShipFields();
   };
 </script>
 </body>

@@ -258,15 +258,34 @@ function processOrderForm(formData) {
 
   var fullAddress = formData.address_auto + formData.address_manual;
 
+  // 配送先の決定:「配送先は上記と同じ」ならこの送り先情報をそのまま配送先として使う。
+  // チェックを外した場合のみ、フォームから送られてきた配送先専用の項目を使う。
+  // (スタンプ注文フォーム「GAS_プルデンシャル版_API」のsameAsAbove分岐と同じ考え方)
+  var sameAsAbove = (formData.sameAsAbove === 'true' || formData.sameAsAbove === 'on');
+  var shipZip, shipAddress, shipName;
+  if (sameAsAbove) {
+    shipZip = formData.zipCode;
+    shipAddress = fullAddress;
+    shipName = formData.userName;
+  } else {
+    shipZip = toHalfWidth((formData.shipZip || "").trim());
+    shipAddress = toHalfWidth((formData.shipAddress || "").trim());
+    shipName = (formData.shipName || "").trim();
+  }
+
   var detailString = "材質:" + corpMaterial + " / 書体:" + corpFont + " / 社名:" + formData.corpName + " / 役職:" + innerTitle;
 
+  // ▼列の並び順は本番スプレッドシートと固定で対応しているため絶対に変更しないこと。
+  // 配送先の3項目(郵便番号・住所・お届け先氏名)は既存の列を一切動かさず、末尾に追記する。
+  // 本番シート側にもこの3列を最後尾に追加しておく必要がある(README.md参照)。
   sheet.appendRow([
     new Date(), formData.referrer, corpMaterial, detailString,
     hasFrei ? freiQty : "-", freiTexts.join(" / "),
     singleResult.lines.length > 0 ? singleResult.text : "-",
     inkQty > 0 ? inkQty : "-",
     isExpress ? "○" : "-", isDigital ? "○" : "-", total,
-    formData.userName, formData.email, formData.zipCode, fullAddress, formData.tel, formData.remarks
+    formData.userName, formData.email, formData.zipCode, fullAddress, formData.tel, formData.remarks,
+    shipZip, shipAddress, shipName
   ]);
 
   var paymentUrl = createSquarePaymentLink(lineItems, formData.userName);
@@ -277,7 +296,7 @@ function processOrderForm(formData) {
     console.error('Notion記録でエラー: ' + notionErr.toString());
   }
 
-  sendOrderEmails(formData, total, hasCorp, corpMaterial, innerTitle, hasFrei, freiTexts, singleResult, inkQty, isExpress, isDigital, deliveryType, fullAddress, corpFont, paymentUrl);
+  sendOrderEmails(formData, total, hasCorp, corpMaterial, innerTitle, hasFrei, freiTexts, singleResult, inkQty, isExpress, isDigital, deliveryType, fullAddress, corpFont, paymentUrl, sameAsAbove, shipZip, shipAddress, shipName);
   return { message: "ご注文を承りました。内容確認のメールをお送りしました。", paymentUrl: paymentUrl };
 
   } catch (e) {
@@ -286,7 +305,7 @@ function processOrderForm(formData) {
   }
 }
 
-function sendOrderEmails(data, total, hasCorp, corpMaterial, innerTitle, hasFrei, freiTexts, singleResult, inkQty, isExpress, isDigital, deliveryType, fullAddress, corpFont, paymentUrl) {
+function sendOrderEmails(data, total, hasCorp, corpMaterial, innerTitle, hasFrei, freiTexts, singleResult, inkQty, isExpress, isDigital, deliveryType, fullAddress, corpFont, paymentUrl, sameAsAbove, shipZip, shipAddress, shipName) {
   var subject = "【注文受付】" + data.userName + "様（合計：" + total.toLocaleString() + "円）";
   var body = data.userName + " 様\n\nご注文ありがとうございます。\n\n【合計金額】" + total.toLocaleString() + "円(税込・送料込)\n【納期】" + deliveryType + "\n\n";
   body += paymentUrl
@@ -317,6 +336,7 @@ function sendOrderEmails(data, total, hasCorp, corpMaterial, innerTitle, hasFrei
     orderDetails += "■文化朱肉30号 × " + inkQty + "\n\n";
   }
   body += orderDetails + "【送り先】\n〒" + data.zipCode + "\n" + fullAddress + "\n" + data.userName + " 様\n電話番号：" + data.tel + "\n";
+  body += "\n【お届け先】\n" + (sameAsAbove ? "（送り先と同じです）\n" : "") + "〒" + shipZip + "\n" + shipAddress + "\n" + shipName + " 様\n";
   if (data.remarks) body += "\n【備考】\n" + data.remarks + "\n";
   GmailApp.sendEmail(data.email, subject, body, { from: ADMIN_EMAIL, bcc: ADMIN_EMAIL });
 
@@ -336,7 +356,9 @@ function sendOrderEmails(data, total, hasCorp, corpMaterial, innerTitle, hasFrei
                   "〒" + data.zipCode + "\n" +
                   fullAddress + "\n" +
                   data.userName + " 様\n" +
-                  "TEL: " + data.tel + "\n";
+                  "TEL: " + data.tel + "\n\n" +
+                  "*■お届け先*\n" +
+                  (sameAsAbove ? "送り先と同じ\n" : "〒" + shipZip + " " + shipAddress + "\n" + shipName + " 様\n");
 
   if (data.remarks) slackText += "\n*■備考*\n" + data.remarks + "\n";
   slackText += "\n詳細: <" + SS_URL + "|スプレッドシートを確認>";
