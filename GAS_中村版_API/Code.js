@@ -265,22 +265,24 @@ function processOrderForm(formData) {
   // 配送先の決定: 他の版と逆で、デフォルト(未チェック)は中村様事務所への固定住所を使う。
   // 「中村様事務所以外に送る」にチェックが入っている場合のみ、フォームの配送先専用項目を使う。
   var shipElsewhere = (formData.shipElsewhere === 'true' || formData.shipElsewhere === 'on');
-  var shipZip, shipAddress, shipName;
+  var shipZip, shipAddress, shipName, shipTel;
   if (shipElsewhere) {
     shipZip = toHalfWidth((formData.shipZip || "").trim());
     shipAddress = toHalfWidth((formData.shipAddress || "").trim());
     shipName = (formData.shipName || "").trim();
+    shipTel = toHalfWidth((formData.shipTel || "").trim());
   } else {
     shipZip = NAKAMURA_OFFICE_ZIP;
     shipAddress = NAKAMURA_OFFICE_ADDRESS;
     shipName = NAKAMURA_OFFICE_NAME;
+    shipTel = NAKAMURA_OFFICE_TEL;
   }
 
   var detailString = "材質:" + corpMaterial + " / 書体:" + corpFont + " / 社名:" + formData.corpName + " / 役職:" + innerTitle;
 
   // ▼列の並び順は本番スプレッドシートと固定で対応しているため絶対に変更しないこと。
-  // 配送先の3項目(郵便番号・住所・お届け先氏名)は既存の列を一切動かさず、末尾に追記する。
-  // 本番シート側にもこの3列を最後尾に追加しておく必要がある(README.md参照)。
+  // 配送先の4項目(郵便番号・住所・お届け先氏名・電話番号)は既存の列を一切動かさず、末尾に追記する。
+  // 本番シート側にもこの4列を最後尾に追加しておく必要がある(README.md参照)。
   sheet.appendRow([
     new Date(), formData.referrer, corpMaterial, detailString,
     hasFrei ? freiQty : "-", freiTexts.join(" / "),
@@ -288,7 +290,7 @@ function processOrderForm(formData) {
     inkQty > 0 ? inkQty : "-",
     "-", isDigital ? "○" : "-", total,
     formData.userName, formData.email, formData.zipCode, fullAddress, formData.tel, formData.remarks,
-    shipZip, shipAddress, shipName
+    shipZip, shipAddress, shipName, shipTel
   ]);
 
   var paymentUrl = createSquarePaymentLink(lineItems, formData.userName);
@@ -299,7 +301,7 @@ function processOrderForm(formData) {
     console.error('Notion記録でエラー: ' + notionErr.toString());
   }
 
-  sendOrderEmails(formData, total, hasCorp, corpMaterial, innerTitle, hasFrei, freiTexts, singleResult, inkQty, isDigital, deliveryType, fullAddress, corpFont, paymentUrl, shipElsewhere, shipZip, shipAddress, shipName);
+  sendOrderEmails(formData, total, hasCorp, corpMaterial, innerTitle, hasFrei, freiTexts, singleResult, inkQty, isDigital, deliveryType, fullAddress, corpFont, paymentUrl, shipElsewhere, shipZip, shipAddress, shipName, shipTel);
   return { message: "ご注文を承りました。内容確認のメールをお送りしました。", paymentUrl: paymentUrl };
 
   } catch (e) {
@@ -308,7 +310,7 @@ function processOrderForm(formData) {
   }
 }
 
-function sendOrderEmails(data, total, hasCorp, corpMaterial, innerTitle, hasFrei, freiTexts, singleResult, inkQty, isDigital, deliveryType, fullAddress, corpFont, paymentUrl, shipElsewhere, shipZip, shipAddress, shipName) {
+function sendOrderEmails(data, total, hasCorp, corpMaterial, innerTitle, hasFrei, freiTexts, singleResult, inkQty, isDigital, deliveryType, fullAddress, corpFont, paymentUrl, shipElsewhere, shipZip, shipAddress, shipName, shipTel) {
   var subject = "【注文受付】" + data.userName + "様（合計：" + total.toLocaleString() + "円）";
   var body = data.userName + " 様\n\nご注文ありがとうございます。\n\n【合計金額】" + total.toLocaleString() + "円(税込・送料無料)\n【納期】" + deliveryType + "\n\n";
   body += paymentUrl
@@ -341,7 +343,7 @@ function sendOrderEmails(data, total, hasCorp, corpMaterial, innerTitle, hasFrei
   body += orderDetails + "【送り先】\n〒" + data.zipCode + "\n" + fullAddress + "\n" + data.userName + " 様\n電話番号：" + data.tel + "\n";
   body += "\n【お届け先】\n" + (shipElsewhere ? "" : "（中村様事務所へお届けします）\n") +
           "〒" + shipZip + "\n" + shipAddress + "\n" + shipName + " 様\n" +
-          (shipElsewhere ? "" : "電話番号：" + NAKAMURA_OFFICE_TEL + "\n");
+          "電話番号：" + shipTel + "\n";
   if (data.remarks) body += "\n【備考】\n" + data.remarks + "\n";
   GmailApp.sendEmail(data.email, subject, body, { from: ADMIN_EMAIL, bcc: ADMIN_EMAIL });
 
@@ -359,7 +361,7 @@ function sendOrderEmails(data, total, hasCorp, corpMaterial, innerTitle, hasFrei
                   data.userName + " 様\n" +
                   "TEL: " + data.tel + "\n\n" +
                   "*■お届け先*\n" +
-                  (shipElsewhere ? "〒" + shipZip + " " + shipAddress + "\n" + shipName + " 様\n" : "中村様事務所（〒" + shipZip + " " + shipAddress + " " + shipName + " 様 / TEL: " + NAKAMURA_OFFICE_TEL + "）\n");
+                  (shipElsewhere ? "〒" + shipZip + " " + shipAddress + "\n" + shipName + " 様 / TEL：" + shipTel + "\n" : "中村様事務所（〒" + shipZip + " " + shipAddress + " " + shipName + " 様 / TEL: " + shipTel + "）\n");
 
   if (data.remarks) slackText += "\n*■備考*\n" + data.remarks + "\n";
   slackText += "\n詳細: <" + SS_URL + "|スプレッドシートを確認>";

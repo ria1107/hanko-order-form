@@ -290,6 +290,10 @@
         <label>お届け先氏名 <span class="required-badge">必須</span></label>
         <input type="text" name="shipName" id="shipName" placeholder="例：田中 太郎">
       </div>
+      <div class="form-group">
+        <label>配送先電話番号 <span class="required-badge">必須</span></label>
+        <input type="text" name="shipTel" id="shipTel" placeholder="090-0000-0000">
+      </div>
     </div>
   </div>
 
@@ -380,6 +384,7 @@
     document.getElementById('shipZip').required = !same;
     document.getElementById('shipAddress').required = !same;
     document.getElementById('shipName').required = !same;
+    document.getElementById('shipTel').required = !same;
   }
 
   // 配送先専用の郵便番号検索。handleZipClick()と同じzipcloud APIを使い、配送先住所欄に反映する。
