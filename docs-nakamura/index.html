@@ -83,14 +83,14 @@
       <img src="https://drive.google.com/thumbnail?id=1fBz-aI7eWxfDMSwgSH8O42UwRti9-Tam&sz=w646">
       <div class="card-checkbox-area"><input type="checkbox" id="check-frei"> <span class="name">フリーメイト (組み合わせゴム印)</span></div>
       <div class="price">1枚 1,320円(税込)</div>
-      <div class="shipping-label">3営業日以内に発送【送料無料】</div>
+      <div class="shipping-label">7営業日以内に発送【送料無料】</div>
     </div>
 
     <div class="price-card-item" id="card-titan" onclick="selectMaterialFromCard('ブラストチタン')">
       <img src="https://drive.google.com/thumbnail?id=1slYAXqbrB_ofLMwAXTY0c2D2n-gNVsO1&sz=w646">
       <div class="card-checkbox-area"><input type="checkbox" id="check-titan"> <span class="name">ブラストチタン 3本セット</span></div>
-      <div class="price">102,850円(税込)</div>
-      <div class="shipping-label">3営業日以内に発送【送料無料】</div>
+      <div class="price">93,500円(税込)</div>
+      <div class="shipping-label">10営業日以内に発送【送料無料】</div>
     </div>
   </div>
 
@@ -106,7 +106,7 @@
       <select name="corpMaterial" id="corpMaterial" onchange="syncCards();">
         <option value="薩摩本柘" id="tsugeOptionPrice">薩摩本柘 (8,800円(税込))</option>
         <option value="黒水牛">黒水牛 (22,000円(税込))</option>
-        <option value="ブラストチタン">ブラストチタン (102,850円(税込))</option>
+        <option value="ブラストチタン">ブラストチタン (93,500円(税込))</option>
       </select>
     </div>
     <div class="form-group"><label>書体</label><img src="https://drive.google.com/thumbnail?id=1cZHV6OC6qciCKkYR92SSn1RRxM-Dw_M6&sz=w1400" class="font-image"><select name="corpFont"><option>篆書体（推奨）</option><option>印相体</option><option>古印体</option></select></div>
@@ -177,7 +177,7 @@
         <label class="single-mini-card" id="miniCard-single18Tsuge">
           <input type="checkbox" name="hasSingle18Tsuge" id="hasSingle18Tsuge" onchange="onSingleItemToggle('single18Tsuge')">
           <img src="https://drive.google.com/thumbnail?id=1jLuP3W4Y6vNmGKX1RgZgH-3vobMn2l2a&sz=w300">
-          <div class="mini-info"><div class="mini-name">薩摩本柘</div><div class="mini-price">6,270円</div></div>
+          <div class="mini-info"><div class="mini-name">薩摩本柘</div><div class="mini-price">5,000円</div></div>
         </label>
         <label class="single-mini-card" id="miniCard-single18Kuro">
           <input type="checkbox" name="hasSingle18Kuro" id="hasSingle18Kuro" onchange="onSingleItemToggle('single18Kuro')">
@@ -213,7 +213,7 @@
         <label class="single-mini-card" id="miniCard-single21Tsuge">
           <input type="checkbox" name="hasSingle21Tsuge" id="hasSingle21Tsuge" onchange="onSingleItemToggle('single21Tsuge')">
           <img src="https://drive.google.com/thumbnail?id=1CSir5UDbe1ptisNJWp-qtIYua7BV6cyh&sz=w300">
-          <div class="mini-info"><div class="mini-name">薩摩本柘</div><div class="mini-price">5,000円</div></div>
+          <div class="mini-info"><div class="mini-name">薩摩本柘</div><div class="mini-price">6,270円</div></div>
         </label>
         <label class="single-mini-card" id="miniCard-single21Kuro">
           <input type="checkbox" name="hasSingle21Kuro" id="hasSingle21Kuro" onchange="onSingleItemToggle('single21Kuro')">
@@ -319,14 +319,14 @@
   var isSpecialFlag = false;
   var TSUGE_PRICE = 8800;
   var KURO_PRICE = 22000;
-  var TITAN_PRICE = 102850;
+  var TITAN_PRICE = 93500;
   var FREI_PRICE = 1320;
   var SHIP_FEE = 0; // 送料無料
   var OPTION_FEE = 2200;
   var SINGLE_PRICES = {
     single15Tsuge: 3630,  single15Kuro: 4070,  single15Titan: 27500,
-    single18Tsuge: 6270,  single18Kuro: 11330, single18Titan: 33000,
-    single21Tsuge: 5000,  single21Kuro: 13000, single21Titan: 49500
+    single18Tsuge: 5000,  single18Kuro: 11330, single18Titan: 33000,
+    single21Tsuge: 6270,  single21Kuro: 13000, single21Titan: 49500
   };
   var SINGLE_LABELS = {
     single15Tsuge: '15ミリ丸棒（薩摩本柘）',  single15Kuro: '15ミリ丸棒（黒水牛）',  single15Titan: '15ミリ丸棒（ブラストチタン）',
@@ -367,6 +367,33 @@
       total += INK_PRICE * inkQty;
     }
     return total;
+  }
+
+  // 単品注文の中に、キー名にkeyword（例:'Titan'）を含むチェック済み項目があるかを判定する。
+  // SINGLE_PRICESのキー名（single18Titan 等）に材質名が含まれる命名規則を利用している。
+  function singleHasMaterial(keyword) {
+    return Object.keys(SINGLE_PRICES).some(function(key) {
+      if (key.indexOf(keyword) === -1) return false;
+      var checkbox = document.getElementById('has' + key.charAt(0).toUpperCase() + key.slice(1));
+      return checkbox && checkbox.checked;
+    });
+  }
+
+  // 材質・商品による納期（発送までの営業日数）の上書き判定。バックエンド(Code.js)の
+  // _resolveDeliveryType と同じ考え方。基本納期（中村版は3営業日固定）に対し、
+  // フリーメイト（7営業日）・ブラストチタン（10営業日）を含む場合は、より日数のかかる方を
+  // 採用する（まとめて発送するため）。基本納期のままなら今まで通りの表示文言（baseLabel）を
+  // 維持し、上書きされた場合は理由付きの文言にする。
+  function resolveDeliveryLabel(baseDays, baseLabel, hasFrei, hasTitan) {
+    var candidates = [];
+    if (hasFrei) candidates.push({ days: 7, reason: 'フリーメイトを含むため' });
+    if (hasTitan) candidates.push({ days: 10, reason: 'ブラストチタンを含むため' });
+
+    var top = null;
+    candidates.forEach(function(c) { if (!top || c.days > top.days) top = c; });
+
+    if (!top || top.days <= baseDays) return baseLabel;
+    return top.days + "営業日以内に発送（" + top.reason + "）";
   }
 
   function handleZipClick() {
@@ -474,6 +501,11 @@
     total += calcSingleItemsTotal();
 
     document.getElementById('totalDisplay').innerText = total.toLocaleString() + "円(税込)";
+
+    // 納期表示（材質・商品ごとの納期ルールを反映。基本納期は3営業日固定）
+    var hasTitanAny = (isCorp && document.getElementById('corpMaterial').value === 'ブラストチタン') || singleHasMaterial('Titan');
+    document.getElementById('deliveryLabel').innerText = "納期：" + resolveDeliveryLabel(3, "3営業日以内に発送", isFrei, hasTitanAny) + "（送料無料）";
+
     buildBreakdown();
   }
 

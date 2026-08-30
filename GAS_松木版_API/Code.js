@@ -106,7 +106,7 @@ function recordOrderToNotion_(formData, lineItems, orderDate) {
 // 価格設定（税込・特急発送分2,200円を含んだ価格）
 const PRICE_CORP_TSUGE_NORMAL = 11000;
 const PRICE_CORP_KURO  = 24200;
-const PRICE_CORP_TITAN = 105050;
+const PRICE_CORP_TITAN = 95700; // 2026-08 法人3本セット価格改定(税込93,500円 + 特急発送分2,200円)
 const FREIMATE_UNIT_PRICE = 1320;
 const SHIPPING_FEE = 770;
 const OPTION_DIGITAL_FEE = 2200;
@@ -117,15 +117,46 @@ const SINGLE_ITEMS_CONFIG = [
   { checkboxField: 'hasSingle15Tsuge', qtyField: 'single15TsugeQty', textField: 'single15TsugeText', label: '15ミリ丸棒（薩摩本柘）',        price: 3630 },
   { checkboxField: 'hasSingle15Kuro',  qtyField: 'single15KuroQty',  textField: 'single15KuroText',  label: '15ミリ丸棒（黒水牛）',        price: 4070 },
   { checkboxField: 'hasSingle15Titan', qtyField: 'single15TitanQty', textField: 'single15TitanText', label: '15ミリ丸棒（ブラストチタン）',        price: 27500 },
-  { checkboxField: 'hasSingle18Tsuge', qtyField: 'single18TsugeQty', textField: 'single18TsugeText', label: '18ミリ天丸鞘付き（薩摩本柘）', price: 6270 },
+  { checkboxField: 'hasSingle18Tsuge', qtyField: 'single18TsugeQty', textField: 'single18TsugeText', label: '18ミリ天丸鞘付き（薩摩本柘）', price: 5000 },
   { checkboxField: 'hasSingle18Kuro',  qtyField: 'single18KuroQty',  textField: 'single18KuroText',  label: '18ミリ天丸鞘付き（黒水牛）',  price: 11330 },
   { checkboxField: 'hasSingle18Titan', qtyField: 'single18TitanQty', textField: 'single18TitanText', label: '18ミリ天丸鞘付き（ブラストチタン）',  price: 33000 },
-  { checkboxField: 'hasSingle21Tsuge', qtyField: 'single21TsugeQty', textField: 'single21TsugeText', label: '21ミリ角天（薩摩本柘）',        price: 5000 },
+  { checkboxField: 'hasSingle21Tsuge', qtyField: 'single21TsugeQty', textField: 'single21TsugeText', label: '21ミリ角天（薩摩本柘）',        price: 6270 },
   { checkboxField: 'hasSingle21Kuro',  qtyField: 'single21KuroQty',  textField: 'single21KuroText',  label: '21ミリ角天（黒水牛）',        price: 13000 },
   { checkboxField: 'hasSingle21Titan', qtyField: 'single21TitanQty', textField: 'single21TitanText', label: '21ミリ角天（ブラストチタン）',        price: 49500 },
 ];
 const PRICE_INK_BUNKA30 = 950; // 文化朱肉30号
 const DELIVERY_TYPE = "14時までのご注文で翌営業日発送";
+
+// 単品注文の中に、checkboxField名にkeyword（例:'Titan'）を含むチェック済み項目があるかを判定する。
+// 単品の命名規則（hasSingle18Titan 等）を利用しており、価格表に行を追加・変更しても
+// フィールド名に材質名（Titan/Kuro）が含まれていれば自動で判定される。
+function _singleHasMaterial(formData, keyword) {
+  return SINGLE_ITEMS_CONFIG.some(function(cfg) {
+    var checked = (formData[cfg.checkboxField] === 'true' || formData[cfg.checkboxField] === 'on');
+    return checked && cfg.checkboxField.indexOf(keyword) !== -1;
+  });
+}
+
+// 材質・商品による納期（発送までの営業日数）の上書き判定。
+// 基本納期（baseDays。特急オプションの有無などバージョンごとの今まで通りのロジックで決まる値）に対して、
+// フリーメイト（7営業日）・ブラストチタン（10営業日）・黒水牛（2営業日、hasKuroを渡した版のみ）を
+// 含む場合は、より日数のかかる方を採用する（1回の注文をまとめて発送するため）。
+// 基本納期のままなら今まで通りの表示文言（baseLabel）を維持し、上書きされた場合は理由が
+// ひと目でわかる文言にする。
+function _resolveDeliveryType(baseDays, baseLabel, hasFrei, hasTitan, hasKuro) {
+  var candidates = [];
+  if (hasFrei) candidates.push({ days: 7, reason: 'フリーメイトを含むため' });
+  if (hasTitan) candidates.push({ days: 10, reason: 'ブラストチタンを含むため' });
+  if (hasKuro) candidates.push({ days: 2, reason: '黒水牛を含むため' });
+
+  var top = null;
+  candidates.forEach(function(c) {
+    if (!top || c.days > top.days) top = c;
+  });
+
+  if (!top || top.days <= baseDays) return baseLabel;
+  return top.days + "営業日以内に発送（" + top.reason + "）";
+}
 
 function toHalfWidth(str) {
   if (!str) return "";
@@ -216,7 +247,13 @@ function processOrderForm(formData) {
   var hasCorp = (formData.hasCorporate === 'true' || formData.hasCorporate === 'on');
   var hasFrei = (formData.hasFreimate === 'true' || formData.hasFreimate === 'on');
   var isDigital = (hasCorp && (formData.isDigital === 'true' || formData.isDigital === 'on'));
-  var deliveryType = DELIVERY_TYPE;
+
+  // 納期（発送までの営業日数）の判定。基本納期は翌営業日発送（1営業日相当）。
+  // フリーメイト（7営業日）・ブラストチタン（10営業日）・黒水牛（2営業日、松木版のみ適用）を
+  // 含む場合は、より日数のかかる方を採用する（まとめて発送するため）。
+  var hasTitanAny = (hasCorp && formData.corpMaterial === 'ブラストチタン') || _singleHasMaterial(formData, 'Titan');
+  var hasKuroAny = (hasCorp && formData.corpMaterial === '黒水牛') || _singleHasMaterial(formData, 'Kuro');
+  var deliveryType = _resolveDeliveryType(1, DELIVERY_TYPE, hasFrei, hasTitanAny, hasKuroAny);
 
   var corpMaterial = "-";
   var innerTitle = "-";
