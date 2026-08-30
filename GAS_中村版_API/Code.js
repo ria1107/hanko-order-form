@@ -35,6 +35,7 @@ const SS_URL = 'https://docs.google.com/spreadsheets/d/' + SPREADSHEET_ID + '/ed
 const NOTION_VERSION = '2025-09-03';
 const NOTION_DB_PROJECT_DATASOURCE_ID = '04875878-4070-47bb-85ab-fed881e7d7e4';
 const NOTION_DB_CASHBOOK_DATASOURCE_ID = 'd5ba36f0-59e9-4377-b1ad-0cc43144afc5';
+const NOTION_DB_INVOICE_DATASOURCE_ID = 'fabeab3b-a7e3-4841-a32c-249fe769e4b7'; // DB_請求書(2026-08-31追加・中村版のみ)
 const NOTION_STAFF_SUGIKADO_ID = '196d872b-594c-8122-97f7-000281a411a0';
 
 function _notionApiRequest(path, payload) {
@@ -98,6 +99,30 @@ function recordOrderToNotion_(formData, lineItems, orderDate) {
         'DB_プロジェクト': { relation: [{ id: projectPage.id }] }
       }
     });
+  });
+
+  createInvoiceDraft_(formData, projectPage.id, isoDate);
+}
+
+// DB_請求書に下書きページを自動作成する(中村版のみ・2026-08-31追加)。
+// 「DB_プロジェクト」へリレーションしておくことで、総売上・請求額などの金額は
+// DB_請求書側の数式が現金出納帳の集計から自動計算する(このNotion連携が既に作っている
+// 案件ページ・現金出納帳明細をそのまま使う仕組みなので、ここでは金額を直接入力しない)。
+// 「見積書番号」等の書類番号と「顧客リレーション」は、番号の重複事故を避けるため
+// あえて空欄のままにする。Notion側の「情報更新」ボタン(採番)→「請求書作成」ボタン(PDF化)は
+// ボタンプロパティのため公開Notion APIからは実行できず、この2クリックのみ人が行う。
+// Notion書き込みに失敗しても注文自体(メール送信・決済)には影響させない。呼び出し側でtry/catchすること。
+function createInvoiceDraft_(formData, projectPageId, isoDate) {
+  _notionApiRequest('pages', {
+    parent: { type: 'data_source_id', data_source_id: NOTION_DB_INVOICE_DATASOURCE_ID },
+    properties: {
+      'ファイル名': { title: [{ text: { content: isoDate + '_' + formData.userName + '様_見積書_請求書_領収書' } }] },
+      '見積日': { date: { start: isoDate } },
+      '請求日': { date: { start: isoDate } },
+      '支払期日': { date: { start: isoDate } },
+      'ステータス': { status: { name: 'クレジットカード払い' } },
+      'DB_プロジェクト': { relation: [{ id: projectPageId }] }
+    }
   });
 }
 
