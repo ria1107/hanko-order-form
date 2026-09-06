@@ -1,34 +1,87 @@
 /**
  * 設定項目
  * ここに秘密の値(URL・メールアドレス等)を直接書かないこと。
- * 「スクリプトのプロパティ」(Apps Scriptエディタ → 歯車アイコン →
- * 「プロジェクトの設定」→「スクリプト プロパティ」)に登録して読み込む。
  *
- * 必要なプロパティ一覧:
- *   ADMIN_EMAIL       管理者(通知・BCC先)のメールアドレス
- *   SLACK_WEBHOOK_URL  Slack通知用のIncoming Webhook URL
- *   SLACK_MEMBER_ID    Slackでメンションする担当者のメンバーID
- *   SPREADSHEET_ID     注文台帳スプレッドシートのID(通常版と同じ台帳)
- *   PRINTER_EMAIL      フリーメイト発注先(印刷業者)のメールアドレス
+ * 【2026-09-07〜: 共通envファイル方式に変更】
+ * 複数のGASプロジェクト(印鑑通常版・中村版・松木版・印鑑統合ショップ等)で同じ値を
+ * 何度も手入力する手間を減らすため、Slack・Square・Notion・印刷業者など「共通の値」は、
+ * Googleドライブ上に置いた1つのdotenv形式テキストファイルからまとめて読み込む方式にした
+ * (印鑑統合ショップ(プロジェクト/F3/20260905_印鑑統合ショップページ/)で先行導入したものと同じ仕組み)。
+ *
+ * このプロジェクトで実際に設定が必要な「スクリプトのプロパティ」は、以下のとおり:
+ *   SHARED_ENV_FILE_ID   共通envファイル(Googleドライブ)のファイルID。他のGASプロジェクトと
+ *                        同じIDを設定すれば、同じ秘密情報(Slack・Square・Notion・印刷業者)を
+ *                        使い回せる。
+ *   ADMIN_EMAIL          管理者(通知・BCC先)のメールアドレス(プロジェクトごとに個別設定。共通envには入れない)
+ *   FROM_EMAIL           お客様への確認メールの「送信元」として表示させたいメールアドレス
+ *                        (未設定ならADMIN_EMAILと同じ値を使う。実際に送るには、このGASを実行している
+ *                        GoogleアカウントのGmail設定で、そのアドレスが「送信者名を追加」として
+ *                        登録・確認済みである必要がある)
+ *   SPREADSHEET_ID       注文台帳スプレッドシートのID(通常版と同じ台帳。プロジェクトごとに個別設定)
+ *
+ * 共通envファイルに書くキー一覧:
+ *   SLACK_WEBHOOK_URL    Slack通知用のIncoming Webhook URL
+ *   SLACK_MEMBER_ID      Slackでメンションする担当者のメンバーID
+ *   PRINTER_EMAIL        フリーメイト発注先(印刷業者)のメールアドレス
  *   SQUARE_ACCESS_TOKEN  Square APIのアクセストークン
  *   SQUARE_LOCATION_ID   SquareのLocation ID
  *   SQUARE_API_BASE      'https://connect.squareupsandbox.com'(テスト) または
- *                         'https://connect.squareup.com'(本番)
+ *                        'https://connect.squareup.com'(本番)
  *   NOTION_API_KEY       Notion連携用インテグレーションのシークレット
+ *
+ * ※特定のプロジェクトだけ値を変えたい場合は、共通envファイルに書かず、そのプロジェクトの
+ *   「スクリプトのプロパティ」に同名キーを直接設定すれば、そちらが優先される(_getConfig_参照)。
  *
  * GAS_通常版_APIとの違い: 送料無料・納期3営業日固定(特急オプションなし)。
  * 画面(HTML)はNetlify等で配信し、このプロジェクトはdoPostで
  * 注文データを受け取る役割のみを持つ。注文後、Square決済リンクを発行する。
  */
 const SCRIPT_PROPS = PropertiesService.getScriptProperties();
+
+// ============================================================
+// 共通envファイル(Googleドライブ上のdotenv形式テキストファイル)の読み込み。
+// 「スクリプトのプロパティ」に同名キーがあればそちらを優先し(プロジェクト個別の上書き用)、
+// なければ共通envファイルの値を使う。どちらにも無ければnull。
+// ============================================================
+var _sharedEnvCache_ = null;
+function _loadSharedEnv_() {
+  if (_sharedEnvCache_) return _sharedEnvCache_;
+  var env = {};
+  var fileId = SCRIPT_PROPS.getProperty('SHARED_ENV_FILE_ID');
+  if (fileId) {
+    try {
+      var text = DriveApp.getFileById(fileId).getBlob().getDataAsString('UTF-8');
+      text.split('\n').forEach(function(line) {
+        line = line.trim();
+        if (!line || line.indexOf('#') === 0) return; // 空行・コメント行は無視
+        var idx = line.indexOf('=');
+        if (idx === -1) return;
+        var key = line.slice(0, idx).trim();
+        var value = line.slice(idx + 1).trim();
+        env[key] = value;
+      });
+    } catch (e) {
+      console.error('共通envファイル(SHARED_ENV_FILE_ID)の読み込みに失敗しました: ' + e.message);
+    }
+  }
+  _sharedEnvCache_ = env;
+  return env;
+}
+function _getConfig_(key) {
+  var direct = SCRIPT_PROPS.getProperty(key);
+  if (direct) return direct;
+  return _loadSharedEnv_()[key] || null;
+}
+
 const ADMIN_EMAIL = SCRIPT_PROPS.getProperty('ADMIN_EMAIL');
-const NOTIFICATION_URL = SCRIPT_PROPS.getProperty('SLACK_WEBHOOK_URL');
-const SLACK_MEMBER_ID = SCRIPT_PROPS.getProperty('SLACK_MEMBER_ID');
+const FROM_EMAIL = SCRIPT_PROPS.getProperty('FROM_EMAIL') || ADMIN_EMAIL; // お客様への確認メールの送信元表示用(未設定ならADMIN_EMAILと同じ)
+const NOTIFICATION_URL = _getConfig_('SLACK_WEBHOOK_URL');
+const SLACK_MEMBER_ID = _getConfig_('SLACK_MEMBER_ID');
 const SPREADSHEET_ID = SCRIPT_PROPS.getProperty('SPREADSHEET_ID');
-const PRINTER_EMAIL = SCRIPT_PROPS.getProperty('PRINTER_EMAIL');
-const SQUARE_ACCESS_TOKEN = SCRIPT_PROPS.getProperty('SQUARE_ACCESS_TOKEN');
-const SQUARE_LOCATION_ID = SCRIPT_PROPS.getProperty('SQUARE_LOCATION_ID');
-const SQUARE_API_BASE = SCRIPT_PROPS.getProperty('SQUARE_API_BASE') || 'https://connect.squareupsandbox.com';
+const PRINTER_EMAIL = _getConfig_('PRINTER_EMAIL');
+const SQUARE_ACCESS_TOKEN = _getConfig_('SQUARE_ACCESS_TOKEN');
+const SQUARE_LOCATION_ID = _getConfig_('SQUARE_LOCATION_ID');
+const SQUARE_API_BASE = _getConfig_('SQUARE_API_BASE') || 'https://connect.squareupsandbox.com';
 const SS_URL = 'https://docs.google.com/spreadsheets/d/' + SPREADSHEET_ID + '/edit';
 
 // ===== Notion連携(注文後にDB_プロジェクト・DB_現金出納帳_F3へ自動記録) =====
@@ -39,7 +92,7 @@ const NOTION_DB_INVOICE_DATASOURCE_ID = 'fabeab3b-a7e3-4841-a32c-249fe769e4b7'; 
 const NOTION_STAFF_SUGIKADO_ID = '196d872b-594c-8122-97f7-000281a411a0';
 
 function _notionApiRequest(path, payload) {
-  var token = SCRIPT_PROPS.getProperty('NOTION_API_KEY');
+  var token = _getConfig_('NOTION_API_KEY');
   if (!token) {
     console.error('スクリプトプロパティ「NOTION_API_KEY」が未設定のため、Notionへの記録をスキップしました');
     return null;
@@ -405,7 +458,7 @@ function sendOrderEmails(data, total, hasCorp, corpMaterial, innerTitle, hasFrei
           "〒" + shipZip + "\n" + shipAddress + "\n" + shipName + " 様\n" +
           "電話番号：" + shipTel + "\n";
   if (data.remarks) body += "\n【備考】\n" + data.remarks + "\n";
-  GmailApp.sendEmail(data.email, subject, body, { from: ADMIN_EMAIL, bcc: ADMIN_EMAIL });
+  GmailApp.sendEmail(data.email, subject, body, { from: FROM_EMAIL, bcc: ADMIN_EMAIL });
 
   // Slack通知（担当者への個人メンション付き）
   var mention = "<@" + SLACK_MEMBER_ID + ">";
