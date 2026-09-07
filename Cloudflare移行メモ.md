@@ -1,7 +1,15 @@
 # Netlify → Cloudflare Pages 移行メモ
 
-作成日: 2026-09-07
+作成日: 2026-09-07 / 更新日: 2026-09-08(Cloudflare Pages 3サイトとも公開完了)
 対象: 印鑑注文フォーム3サイト(通常版・松木版・中村版)のホスティング移行(表側の静的サイトのみ。GAS側は変更なし)
+
+## 【2026-09-08 追記】Cloudflare Pages公開完了
+
+社長が`nishimoto@f-3.jp`でCloudflareアカウント作成 → `wrangler login`でCLI連携 → くろちゃんが`wrangler pages project create`/`wrangler pages deploy`で3プロジェクトを作成・公開。全サイトHTTPステータス200・タイトル表示を確認済み(下記5.参照)。
+
+**ダッシュボードでのGitHub連携は今回未実施**(CLIから直接アップロードする方式で公開した)。そのため、**今後リポジトリの`docs`/`docs-matsuki`/`docs-nakamura`を更新しても自動では反映されない**。更新のたびに以下のいずれかが必要:
+- 手動: `npx wrangler pages deploy <docsフォルダー> --project-name=<プロジェクト名> --branch=main --commit-dirty=true`
+- または後日、Cloudflareダッシュボードで各プロジェクトに「Connect to Git」を追加すれば、以後は`git push`で自動反映されるようになる(旧Netlifyと同じ運用に戻せる。おすすめ)
 
 ## 背景
 
@@ -125,9 +133,17 @@ Root directoryはどのプロジェクトも変更不要(リポジトリ直下`/
 
 ## 8. 残作業(次にやること)
 
-1. 松木版・中村版のNetlify公開URLをNetlify管理画面で確認し、Notion「DB_アプリURL台帳」の「要確認」を確定させる
-2. Cloudflareアカウントを新規作成し、GitHub連携する(上記5.の手順)
-3. ダッシュボードで3プロジェクトを作成(上記3.の設定値どおり)
-4. 3サイトとも実機で表示確認 + テスト注文1件を通しで確認(GASのSlack通知・スプレッドシート記帳まで。社長承認のうえ実施)
-5. 先生方への案内URLを変更する場合、いつ・どう周知するかを社長と相談(独自ドメイン設定も含めて検討)
+1. ~~松木版・中村版のNetlify公開URLをNetlify管理画面で確認~~ → **不要になった**。Cloudflare側の新URLに切り替えるため、旧URLは記録のみで十分(下記9.)
+2. ~~Cloudflareアカウントを新規作成し、GitHub連携する~~ → **完了**(2026-09-08、CLIでの直接デプロイ方式。GitHub連携は未実施、上記の追記参照)
+3. ~~ダッシュボードで3プロジェクトを作成~~ → **完了**(2026-09-08、CLIで作成)
+4. ~~3サイトとも実機で表示確認~~ → **完了**(HTTPステータス200・タイトル一致を確認)。**テスト注文1件を通しで確認(GASのSlack通知・スプレッドシート記帳まで)はまだ未実施** → 実施する場合は社長に一声かけてから
+5. 先生方への案内URLを変更する場合、いつ・どう周知するかを社長と相談(独自ドメイン設定も含めて検討)。Notion「DB_アプリURL台帳」の更新も要確認のうえ実施
 6. 問題なければ社長の最終確認を得たうえでNetlify側を停止・削除(今回は未実施。指示があるまで着手しない)
+
+## 9. 新URL(公開済み・2026-09-08時点)
+
+| サイト | 新URL(Cloudflare Pages) | 旧URL(Netlify・現在も稼働中) |
+|---|---|---|
+| 通常版 | https://f3-hanko-order.pages.dev | https://f3-hanko-order.netlify.app |
+| 松木版 | https://f3-hanko-order-matsuki.pages.dev | 不明(Netlify管理画面要確認) |
+| 中村版(送料無料) | https://f3-hanko-order-nakamura.pages.dev | 不明(Netlify管理画面要確認) |
