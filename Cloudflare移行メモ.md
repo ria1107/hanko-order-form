@@ -1,7 +1,27 @@
 # Netlify → Cloudflare Pages 移行メモ
 
-作成日: 2026-09-07 / 更新日: 2026-09-08(Cloudflare Pages 3サイトとも公開完了)
+作成日: 2026-09-07 / 更新日: 2026-09-08(Cloudflare Pages 3サイトとも公開完了、匿名化リネーム実施)
 対象: 印鑑注文フォーム3サイト(通常版・松木版・中村版)のホスティング移行(表側の静的サイトのみ。GAS側は変更なし)
+
+## 【2026-09-08 追記2】プロジェクト名・フォルダー名から紹介者の個人名を除去
+
+このリポジトリは`ria1107/hanko-order-form`として**GitHub上で公開**されており、Cloudflareのプロジェクト名も公開URLの一部になる。紹介者「松木さん」「中村さん」という個人名が外部から見える識別子(URL・フォルダー名)に残るのを避けるため、社長指示で以下の通り統一した。
+
+| 版 | 旧フォルダー名 | 新フォルダー名 | 旧Cloudflareプロジェクト名 | 新Cloudflareプロジェクト名 |
+|---|---|---|---|---|
+| 通常版 | `docs/` | (変更なし) | `f3-hanko-order` | (変更なし) |
+| 中村版(送料無料) | `docs-nakamura/` | **`docs-02/`** | `f3-hanko-order-nakamura` | **`f3-hanko-order-02`**(社長がダッシュボードでリネーム。デプロイ履歴が完全一致することを確認済み、データ影響なし) |
+| 松木版(翌営業日発送) | `docs-matsuki/` | **`docs-03/`** | `f3-hanko-order-matsuki` | **`f3-hanko-order-03`**(くろちゃんが削除→作り直し) |
+
+フォルダー名は`git mv`でリネーム(履歴は保持)。README.mdのパス表記も合わせて更新済み。**本文中の「松木様」「中村様」といった業務説明の記述自体は、GASの分岐ロジックを理解するための内部ドキュメントとして残してある**(削除していない)。
+
+**副作用**: 旧フォルダー名`docs-matsuki`/`docs-nakamura`をNetlify側が引き続きBase directoryとして参照している場合、次にNetlifyが自動ビルドを試みた際に「フォルダーが見つからない」でビルド失敗する可能性がある。ただしNetlifyは失敗時も直前の成功ビルドを配信し続けるため、**今すぐ表示が消えることはない**。いずれNetlifyを停止する予定なので実害は無い想定。
+
+**重要な発見**: Cloudflareダッシュボードでプロジェクト名を変更しても、実際の公開URL(`.pages.dev`)は変わらない(作成時の名前のまま固定)。そのため`f3-hanko-order-02`にリネームしても、実際のURLは今も`f3-hanko-order-nakamura.pages.dev`のまま。プロジェクト削除→再作成は安全装置でブロックされたため、**代わりに独自ドメイン(Custom domains)を追加し、そちらだけを先生方に案内する方式**で解決することにした(社長承認済み・2026-09-08)。
+
+- 中村版: `order2.f-3.jp` → CNAME先 `f3-hanko-order-nakamura.pages.dev`
+- 松木版: `order3.f-3.jp` → CNAME先 `f3-hanko-order-matsuki.pages.dev`
+- ドメイン`f-3.jp`はお名前.comで管理(お名前.com Naviの「DNS設定」からCNAME追加)。Cloudflare側は各プロジェクトの「Custom domains」タブから追加。どちらもブラウザでのログイン操作が必要なため社長作業待ち(2026-09-08時点で未実施)。
 
 ## 【2026-09-08 追記】Cloudflare Pages公開完了
 
@@ -64,11 +84,13 @@ Cloudflareの公式ドキュメント(モノレポ機能)によると、GitHub�
 
 1つのGitHubリポジトリ(`ria1107/hanko-order-form`)から、以下の3つのPagesプロジェクトを作成する。
 
-| プロジェクト名(案) | Production branch | Framework preset | Build command | Build output directory | 対応サイト |
+| プロジェクト名 | Production branch | Framework preset | Build command | Build output directory | 対応サイト |
 |---|---|---|---|---|---|
 | `f3-hanko-order` | `main` | None | (空欄) | `docs` | 通常版 |
-| `f3-hanko-order-matsuki` | `main` | None | (空欄) | `docs-matsuki` | 松木版 |
-| `f3-hanko-order-nakamura` | `main` | None | (空欄) | `docs-nakamura` | 中村版 |
+| `f3-hanko-order-03` | `main` | None | (空欄) | `docs-03` | 松木版 |
+| `f3-hanko-order-02` | `main` | None | (空欄) | `docs-02` | 中村版 |
+
+(2026-09-08時点で確定した名称。個人名を含まない番号方式に統一済み)
 
 Root directoryはどのプロジェクトも変更不要(リポジトリ直下`/`のまま)。Build output directoryだけ変えればよい。
 
@@ -124,8 +146,8 @@ Root directoryはどのプロジェクトも変更不要(リポジトリ直下`/
 プロジェクト名をそのまま使うと、Cloudflareの標準ドメイン`https://<プロジェクト名>.pages.dev`が発行される。
 
 - 通常版: `https://f3-hanko-order.pages.dev`
-- 松木版: `https://f3-hanko-order-matsuki.pages.dev`
-- 中村版: `https://f3-hanko-order-nakamura.pages.dev`
+- 松木版: `https://f3-hanko-order-03.pages.dev`
+- 中村版: `https://f3-hanko-order-02.pages.dev`
 
 通常版はすでに先生方に`f3-hanko-order.netlify.app`を案内済みの可能性が高いため、**URLが変わる**。独自ドメイン(例: `order.f-3.jp`など)をCloudflare側で追加すれば、案内URLを固定化できる(今回は提案のみで未設定)。
 
