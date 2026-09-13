@@ -169,3 +169,52 @@ Root directoryはどのプロジェクトも変更不要(リポジトリ直下`/
 | 通常版 | https://f3-hanko-order.pages.dev | https://f3-hanko-order.netlify.app |
 | 松木版 | https://f3-hanko-order-matsuki.pages.dev | 不明(Netlify管理画面要確認) |
 | 中村版(送料無料) | https://f3-hanko-order-nakamura.pages.dev | 不明(Netlify管理画面要確認) |
+
+---
+
+## 【2026-09-14 障害と復旧】通常版・中村版が404になっていた(D-019)
+
+### 症状
+社長から「印鑑のフォームが使えなくなっている」と報告。`https://f3-hanko-order.pages.dev` がブラウザで **HTTP ERROR 404**。
+
+### 実測した状態(2026-09-14)
+| サイト | URL | 障害時 | 復旧後 |
+|---|---|---|---|
+| 通常版 | https://f3-hanko-order.pages.dev | ❌ 404 | ✅ 200 |
+| 中村版 | https://f3-hanko-order-nakamura.pages.dev | ❌ 404 | ✅ 200 |
+| 松木版 | https://f3-hanko-order-matsuki.pages.dev | ✅ 200 | ✅ 200 |
+| 旧Netlify(通常版) | https://f3-hanko-order.netlify.app | ✅ 200(生存) | ✅ 200 |
+| order2.f-3.jp / order3.f-3.jp | — | DNS未設定(名前解決せず)。独自ドメインは結局未実施のまま |
+
+### 原因(デプロイ履歴から特定)
+`wrangler pages deployment list` で各デプロイを1つずつ叩いて切り分けた結果、**同じコミットでも「CLI直接デプロイは中身あり・GitHub連携の自動ビルドは空」**という明確なパターンが出た。
+
+| プロジェクト | デプロイ | ソース | 実測 |
+|---|---|---|---|
+| f3-hanko-order | 169d810f(6日前・CLI) | 522e7fc | ✅ 200 |
+| f3-hanko-order | 5a0f6b1d(CLI) | aabcf33 | ✅ 200 |
+| f3-hanko-order | cfdb1f59(Git自動) | aabcf33 | ❌ 404 |
+| f3-hanko-order | **827d6524(Git自動・本番に割当)** | 8d9dce5 | ❌ **404** |
+| f3-hanko-order-03(松木) | 4e023b6c(Git自動) | 8d9dce5 | ✅ 200 |
+
+→ 9/8以降に各プロジェクトへ **GitHub連携(Connect to Git)が追加された**が、`f3-hanko-order`(通常版)と`f3-hanko-order-02`(中村版)は **Build output directory の設定が正しくない**ため、自動ビルドが空の成果物を公開し、それが本番デプロイとして上書きされた。松木版(`f3-hanko-order-03`=出力`docs-03`)だけは設定が合っていたため無傷だった。
+
+**注意: フォーム本体(index.html)は一切壊れていない。**ローカルの`docs/` `docs-02/` `docs-03/`は3版とも無傷で、「空の箱」が本番に差し替わっただけ。
+
+### 実施した復旧(2026-09-14、社長承認のうえ実行)
+```
+npx wrangler pages deploy docs     --project-name=f3-hanko-order    --branch=main --commit-dirty=true
+npx wrangler pages deploy docs-02  --project-name=f3-hanko-order-02 --branch=main --commit-dirty=true
+```
+実行後、3サイトともHTTP 200 + `<title>`表示を確認済み。
+
+### ⚠️ 未解決(次にやること)
+**Build output directory の設定を直さない限り、次に`git push`した時点でまた空ビルドに上書きされて404が再発する。**ダッシュボードでの操作が必要(ブラウザ作業のため社長かブラウザ操作時に実施):
+
+1. https://dash.cloudflare.com/3f088a3ce73b0cfaa33e70a6dd92c30f/pages/view/f3-hanko-order/settings/builds-deployments
+   → Build output directory を **`docs`** に(Build commandは空欄、Root directoryは`/`のまま)
+2. 同様に `f3-hanko-order-02` → **`docs-02`**
+3. (参考)`f3-hanko-order-03` は **`docs-03`**。ここは既に正しいはず
+4. 直したら、ダミーの`git push`かダッシュボードの「Retry deployment」で自動ビルドが成功するか確認する
+
+代替案: GitHub連携を解除して、更新のたびに上記`wrangler pages deploy`を手動実行する運用に戻す(くろちゃんが実行できる)。連携のメリット(pushで自動反映)を取るなら1〜3の設定修正が必要。
