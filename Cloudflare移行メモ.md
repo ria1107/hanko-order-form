@@ -218,3 +218,104 @@ npx wrangler pages deploy docs-02  --project-name=f3-hanko-order-02 --branch=mai
 4. 直したら、ダミーの`git push`かダッシュボードの「Retry deployment」で自動ビルドが成功するか確認する
 
 代替案: GitHub連携を解除して、更新のたびに上記`wrangler pages deploy`を手動実行する運用に戻す(くろちゃんが実行できる)。連携のメリット(pushで自動反映)を取るなら1〜3の設定修正が必要。
+
+---
+
+## 【2026-09-18 追記】D-024関連: 開発課依頼「6フォーム整理」実施記録
+
+社長から開発課(くろちゃん自身が直接実行)への依頼で、F3の6注文フォーム全体(印鑑3種・らくぽん・スタンプ・LST予約)について
+①不要プロジェクト削除 ②印鑑フォームの404再発リスク解消 ③独自ドメイン設定 を実施した。
+
+### 1. Build output directory 問題 → **API経由で修正・解決**
+
+**重要な発見: Cloudflare REST APIならCLI/curlだけで`destination_dir`(Build output directory)を読み書きできた。ダッシュボード操作は不要だった。**
+
+認証には`wrangler login`済みのOAuthトークンをそのまま使える(`~/Library/Preferences/.wrangler/config/default.toml`の`oauth_token`)。
+
+```bash
+# 読み取り
+curl -H "Authorization: Bearer $CF_TOKEN" \
+  "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/pages/projects/f3-hanko-order"
+
+# 書き込み(PATCH)
+curl -X PATCH -H "Authorization: Bearer $CF_TOKEN" -H "Content-Type: application/json" \
+  -d '{"build_config":{"destination_dir":"docs"}}' \
+  "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/pages/projects/f3-hanko-order"
+```
+
+確認したところ、`f3-hanko-order`は`destination_dir=docs`、`f3-hanko-order-02`は`destination_dir=docs-02`と**すでに正しい値になっていた**(前回2026-09-14の障害以降、いつの間にか正しく設定されていた。社長がダッシュボードで直された可能性)。念のためAPI経由で同じ値を再設定(PATCH)し、書き込み権限があることも確認した。現状の本番URLは3版とも実際のフォーム内容(空ビルドではない)を配信中であることをcurlで確認済み。
+
+**今後もし再発したら**、ダッシュボード操作(下記の旧手順)を使わずとも、上記のAPI PATCHコマンドで直せる。
+
+### 2. 独自ドメイン(Custom domains)追加 → **API経由で6件とも追加成功、DNS待ち**
+
+Cloudflare Pages Custom Domains APIで6プロジェクトすべてにドメインを追加できた:
+
+```bash
+curl -X POST -H "Authorization: Bearer $CF_TOKEN" -H "Content-Type: application/json" \
+  -d '{"name":"order.f-3.jp"}' \
+  "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/pages/projects/f3-hanko-order/domains"
+```
+
+| フォーム | プロジェクト名 | 独自ドメイン | 状態(2026-09-18時点) |
+|---|---|---|---|
+| 印鑑注文(通常版) | f3-hanko-order | order.f-3.jp | Cloudflare側は追加済み・`pending`(CNAME record not set) |
+| 印鑑注文(中村版) | f3-hanko-order-02 | order2.f-3.jp | 同上 |
+| 印鑑注文(松木版) | f3-hanko-order-03 | order3.f-3.jp | 同上 |
+| らくぽんゴルフ通販 | f3-rakupon-order | rakupon.f-3.jp | 同上 |
+| スタンプ注文 | f3-stamp-order | stamp.f-3.jp | 同上 |
+| LST撮影会予約 | f3-lst-reservation | lst.f-3.jp | 同上(**表示確認のみ、注文APIへのテスト送信なし**) |
+
+Cloudflare側の追加は完了したが、`f-3.jp`のネームサーバーは今も`ns-rs1/ns-rs2.gmoserver.jp`(お名前.com)のままで、6つのサブドメインとも`dig`でCNAME未設定(何も返らない)を確認。**次はお名前.com側でCNAMEを追加する人間作業が必要**(下記3.)。
+
+### 3. お名前.com側でのCNAME設定(★人間の作業が必要)
+
+お名前.com Navi(https://navi.onamae.com/ )にログイン → 「DNS」→「DNS設定/転送設定」→ `f-3.jp`を選択 → 「DNS設定」→「入力方法選択」で以下6行を追加する。
+
+| ホスト名 | TYPE | VALUE(CNAME先) |
+|---|---|---|
+| order | CNAME | f3-hanko-order.pages.dev |
+| order2 | CNAME | f3-hanko-order-nakamura.pages.dev |
+| order3 | CNAME | f3-hanko-order-matsuki.pages.dev |
+| rakupon | CNAME | f3-rakupon-order.pages.dev |
+| stamp | CNAME | f3-stamp-order.pages.dev |
+| lst | CNAME | f3-lst-reservation.pages.dev |
+
+**注意**: order2/order3のCNAME先はプロジェクト名(`f3-hanko-order-02`/`-03`)ではなく、**作成時に発行された実際の`.pages.dev`**(`-nakamura`/`-matsuki`)なので要注意(2026-09-08の追記に記載の通り、ダッシュボードでプロジェクト名だけリネームしても実URLは変わらない)。
+
+手順(お名前.com Navi、高校生向け):
+1. https://navi.onamae.com/ にアクセスし、お名前.com IDでログイン
+2. 上部メニュー「ドメイン」→「ドメイン機能一覧」を開く
+3. 一覧から対象ドメイン`f-3.jp`にチェックを入れる
+4. 「DNS関連機能設定」欄の「DNS設定/転送設定」を選択→「設定する」ボタン
+5. 対象ドメイン`f-3.jp`の「DNS設定」リンクをクリック
+6. 「DNSレコード設定を利用する」の「設定する」を押す
+7. 画面下の入力欄で、ホスト名に`order`、TYPEで`CNAME`を選択、VALUEに`f3-hanko-order.pages.dev`(末尾のピリオドは不要)を入力し「追加」
+8. 同様に残り5行(order2/order3/rakupon/stamp/lst)を追加
+9. 一番下の「確認画面へ進む」→内容を確認して「設定する」
+10. 反映まで数分〜数時間(最大24時間程度)。反映後、`https://order.f-3.jp`等をブラウザで開いてフォームが表示されればOK。Cloudflare側は自動でSSL証明書を発行し`status`が`active`に変わる(ダッシュボードのCustom domainsタブで確認可能)
+
+反映確認は`dig order.f-3.jp CNAME +short`やブラウザアクセスで可能(くろちゃんでも巡回時に確認できる)。
+
+### 4. 不要プロジェクトの削除
+
+`f3-prudential-stamp-order`はフィッシング誤検知で403ブロック済み・2026-09-15に`f3-stamp-order`へ完全移行済み(README.mdの案内URLも切替済み)であることを確認し、`wrangler pages project delete f3-prudential-stamp-order`で削除した。削除後は404ではなく530(存在しないPagesドメイン)を返すことを確認。詳細は`会社基盤/products/スタンプ注文_保険代理店様向け/Cloudflare移行メモ.md`参照。
+
+### 5. 品質チェック結果(2026-09-18実施分、全てcurlの表示確認のみ)
+
+| サイト | HTTPステータス |
+|---|---|
+| f3-hanko-order.pages.dev | 200 |
+| f3-hanko-order-nakamura.pages.dev(中村版実URL) | 200 |
+| f3-hanko-order-matsuki.pages.dev(松木版実URL) | 200 |
+| f3-rakupon-order.pages.dev | 200 |
+| f3-stamp-order.pages.dev | 200 |
+| f3-lst-reservation.pages.dev | 200(**送信ボタンは押していない**) |
+| f3-prudential-stamp-order.pages.dev(削除後) | 530(プロジェクト不存在。想定通り) |
+
+### 残作業
+
+1. お名前.comで上記6件のCNAMEを追加(社長 or ブラウザ操作時のくろちゃん)
+2. DNS反映・Cloudflare側の`status`が`active`になったことを確認
+3. 独自ドメインが安定稼働したら、案内URL切替のタイミングを社長と相談し、Notion「DB_アプリURL台帳」を更新
+4. 印鑑フォームのBuild output directoryは今回API経由で正常値を再確認・再設定したが、**GitHub連携の自動ビルドが将来また空ビルドを作らないか、次回のgit push後に一度実機確認することを推奨**
